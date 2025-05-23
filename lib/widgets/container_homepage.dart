@@ -5,10 +5,10 @@ class ScheduleCard extends StatelessWidget {
   final VoidCallback onBookingPressed;
 
   const ScheduleCard({
-    Key? key,
+    super.key,
     required this.username,
     required this.onBookingPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
