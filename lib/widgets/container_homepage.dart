@@ -138,7 +138,10 @@ class ScheduleCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text("Input Code Booking"),
+                    child: Text(
+                      "Input Code Booking",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
