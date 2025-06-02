@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tutgo/widgets/container_homepage.dart';
 import 'package:tutgo/widgets/navbar_homepage.dart';
+import 'package:tutgo/screens/train_code_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,8 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ScheduleCard(
               username: "Ndaboi",
               onBookingPressed: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => const TrainCodeScreen(), 
+                    ), 
+                );
                 // Aksi saat tombol ditekan
-                print("Booking code input clicked!");
+                //  print("Booking code input clicked!");
                 // You could navigate to a booking screen or show a dialog here
               },
             ),
