@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tutgo/screens/success_screen.dart';
 import 'package:tutgo/widgets/warning_box.dart';
 import 'package:tutgo/widgets/title_section.dart';
 import 'package:tutgo/widgets/train_code_input_form.dart';
@@ -24,10 +25,19 @@ Widget build(BuildContext context) {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
-                children: const [
-                  WarningBox(),
-                  TrainCodeInputForm(),
-                ],
+                children: [
+                    const WarningBox(),
+                    TrainCodeInputForm(
+                      onSubmit: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SuccessScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
               ),
             ),
           ),
