@@ -41,18 +41,10 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
+                            Image.asset(
+                              'assets/images/no_data.png',
                               width: 200,
                               height: 200,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.notifications_off,
-                                size: 80,
-                                color: Colors.grey[500],
-                              ),
                             ),
                             const SizedBox(height: 10),
                             const Text(

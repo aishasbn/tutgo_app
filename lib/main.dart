@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/train_list_screen.dart';
-import 'screens/detail_kereta_screen.dart';
 import 'screens/profile_screen.dart';
-import 'widgets/custom_navbar.dart'; // Tambahkan import ini
+import 'widgets/custom_navbar.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,16 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Train Tracking App',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        fontFamily: 'Roboto',
-      ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => MainNavigationScreen(),
-        '/detail': (context) => DetailKeretaScreen(),
-      },
+      title: 'Train Tracking App - Home',
+      theme: ThemeData(primarySwatch: Colors.pink),
+      home: MainNavigationScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
