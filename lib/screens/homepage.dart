@@ -1,7 +1,7 @@
-// // lib/screens/homepage.dart
-// import 'package:flutter/material.dart';
-// import 'package:tutgo/widgets/container_homepage.dart';
-// import 'package:tutgo/widgets/custom_navbar.dart';
+import 'package:flutter/material.dart';
+import 'package:tutgo/widgets/container_homepage.dart';
+import 'package:tutgo/widgets/navbar_homepage.dart';
+import 'package:tutgo/screens/train_code_screen.dart';
 
 // class HomeScreen extends StatefulWidget {
 //   const HomeScreen({super.key});
@@ -13,27 +13,36 @@
 // class _HomeScreenState extends State<HomeScreen> {
 //   int _selectedIndex = 0;
 
-//   void _onNavItemTapped(int index) {
-//     setState(() {
-//       _selectedIndex = index;
-//       // Add navigation logic here if needed
-//     });
-//   }
+  void _onNavItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      // Here you would typically navigate to different screens
+      // For now, we'll just update the index
+    });
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFFEE5E5),
-//       body: SafeArea(
-//         child: Column(
-//           children: [
-//             // Your existing content
-//             ScheduleCard(
-//               username: "Ndaboi",
-//               onBookingPressed: () {
-//                 print("Booking code input clicked!");
-//               },
-//             ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFFEE5E5), // Light pink background matching the image
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Schedule Card
+            ScheduleCard(
+              username: "Ndaboi",
+              onBookingPressed: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => const TrainCodeScreen(), 
+                    ), 
+                );
+                // Aksi saat tombol ditekan
+                //  print("Booking code input clicked!");
+                // You could navigate to a booking screen or show a dialog here
+              },
+            ),
             
 //             // Notifications Section
 //             Expanded(
