@@ -1,31 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:tutgo/screens/homepage.dart'; // Make sure this path is correct
+import 'screens/home_screen.dart';
+import 'screens/train_list_screen.dart';
+import 'screens/detail_kereta_screen.dart';
+import 'screens/profile_screen.dart';
+import 'widgets/custom_navbar.dart'; // Tambahkan import ini
 
 void main() {
-  runApp(const MainApp());
+  runApp(MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'TUTGO',
-      debugShowCheckedModeBanner: false, // Removes debug banner
+      title: 'Train Tracking App',
       theme: ThemeData(
-        // Set the primary color theme to match your design (pink)
-        primaryColor: const Color(0xFFD84F9C),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFD84F9C),
-          primary: const Color(0xFFD84F9C),
-          secondary: const Color(0xFFFFB74D),
-        ),
-        // Add other theme customizations as needed
-        fontFamily: 'Poppins', // If you're using a custom font
-        scaffoldBackgroundColor: const Color(0xFFFEE5E5), // Light pink background
+        primarySwatch: Colors.pink,
+        fontFamily: 'Roboto',
       ),
-      home: const HomeScreen(), // Show your HomeScreen as the initial screen
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MainNavigationScreen(),
+        '/detail': (context) => DetailKeretaScreen(),
+      },
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class MainNavigationScreen extends StatefulWidget {
+  @override
+  _MainNavigationScreenState createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    HomeScreen(),
+    TrainListScreen(),
+    ProfileScreen(),
+  ];
+
+  void _onItemSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: CustomNavBar(
+        onItemSelected: _onItemSelected,
+        selectedIndex: _selectedIndex,
+      ),
     );
   }
 }

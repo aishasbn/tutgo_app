@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 class CustomNavBar extends StatefulWidget {
   final Function(int) onItemSelected;
   final int selectedIndex;
-  
-  // Parameters for customization
   final Color baseColor;
   final Color activeIconColor;
   final Color inactiveIconColor;
@@ -12,41 +10,31 @@ class CustomNavBar extends StatefulWidget {
   final double height;
   final double centerButtonSize;
   
-  // Asset paths
-  final String homeIconPath;
-  final String trainIconPath;
-  final String profileIconPath;
-  
   const CustomNavBar({
-    Key? key, 
+    super.key, 
     required this.onItemSelected, 
     this.selectedIndex = 0,
-    this.baseColor = const Color(0xFFFFB74D),     // Orange/Yellow background
-    this.activeIconColor = const Color(0xFF956D39),  // Darker orange for active icons
-    this.inactiveIconColor = const Color(0xFFFEF8EF), // Light orange for inactive icons
-    this.centerColor = const Color(0xFFD84F9C),   // Pink color for center button
+    this.baseColor = const Color(0xFFFFB74D),
+    this.activeIconColor = const Color(0xFF956D39),
+    this.inactiveIconColor = const Color(0xFFFEF8EF),
+    this.centerColor = const Color(0xFFD84F9C),
     this.height = 80.0,
     this.centerButtonSize = 60.0,
-    this.homeIconPath = 'assets/images/home_icon.png',
-    this.trainIconPath = 'assets/images/train_icon.png',
-    this.profileIconPath = 'assets/images/profile_icon.png',
-  }) : super(key: key);
+  });
   
   @override
   State<CustomNavBar> createState() => _CustomNavBarState();
 }
 
 class _CustomNavBarState extends State<CustomNavBar> {
-  // Track hover states
   bool _isHomeHovered = false;
   bool _isProfileHovered = false;
   
   @override
   Widget build(BuildContext context) {
-    // Calculate center button's position
-    final centerButtonPosition = widget.height * 0.15; // How much it sticks out
+    final centerButtonPosition = widget.height * 0.15;
     
-    return Container(
+    return SizedBox(
       height: widget.height,
       child: Stack(
         children: [
@@ -79,11 +67,9 @@ class _CustomNavBarState extends State<CustomNavBar> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Use Image.asset if you have icons, or Icons for built-in Flutter icons
-                      Image.asset(
-                        widget.homeIconPath,
-                        width: 24,
-                        height: 24,
+                      Icon(
+                        Icons.home,
+                        size: 24,
                         color: (widget.selectedIndex == 0 || _isHomeHovered) 
                             ? widget.activeIconColor 
                             : widget.inactiveIconColor,
@@ -122,10 +108,9 @@ class _CustomNavBarState extends State<CustomNavBar> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        widget.profileIconPath,
-                        width: 24,
-                        height: 24,
+                      Icon(
+                        Icons.person,
+                        size: 24,
                         color: (widget.selectedIndex == 2 || _isProfileHovered) 
                             ? widget.activeIconColor 
                             : widget.inactiveIconColor,
@@ -171,10 +156,9 @@ class _CustomNavBarState extends State<CustomNavBar> {
                     ],
                   ),
                   child: Center(
-                    child: Image.asset(
-                      widget.trainIconPath,
-                      width: 30,
-                      height: 30,
+                    child: Icon(
+                      Icons.train,
+                      size: 30,
                       color: Colors.white,
                     ),
                   ),
