@@ -1,19 +1,60 @@
 import 'package:flutter/material.dart';
+import 'screens/home_screen.dart';
+import 'screens/train_list_screen.dart';
+import 'screens/detail_kereta_screen.dart';
+import 'screens/profile_screen.dart';
+import 'widgets/custom_navbar.dart'; // Tambahkan import ini
 
 void main() {
-  runApp(const MainApp());
+  runApp(MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Train Tracking App',
+      theme: ThemeData(
+        primarySwatch: Colors.pink,
+        fontFamily: 'Roboto',
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MainNavigationScreen(),
+        '/detail': (context) => DetailKeretaScreen(),
+      },
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class MainNavigationScreen extends StatefulWidget {
+  @override
+  _MainNavigationScreenState createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    HomeScreen(),
+    TrainListScreen(),
+    ProfileScreen(),
+  ];
+
+  void _onItemSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: CustomNavBar(
+        onItemSelected: _onItemSelected,
+        selectedIndex: _selectedIndex,
       ),
     );
   }

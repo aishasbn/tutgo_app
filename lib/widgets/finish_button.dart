@@ -6,14 +6,14 @@ class FinishButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const FinishButton({
-    super.key,
+    Key? key,
     required this.kereta,
     required this.onPressed,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,

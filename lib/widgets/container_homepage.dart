@@ -5,10 +5,10 @@ class ScheduleCard extends StatelessWidget {
   final VoidCallback onBookingPressed;
 
   const ScheduleCard({
-    Key? key,
+    super.key,
     required this.username,
     required this.onBookingPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +138,10 @@ class ScheduleCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text("Input Code Booking"),
+                    child: Text(
+                      "Input Code Booking",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],

@@ -51,8 +51,6 @@ class TrainListScreen extends StatelessWidget {
     ),
   ];
 
-  const TrainListScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
