@@ -13,10 +13,10 @@ class ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.pink[400],
-        borderRadius: BorderRadius.vertical(
+        borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(30),
         ),
       ),
@@ -28,13 +28,13 @@ class ScheduleCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: Colors.orange[200],
-                child: Icon(Icons.person, color: Colors.white),
+                child: const Icon(Icons.person, color: Colors.white),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'Welcome, ',
                       style: TextStyle(
                         color: Colors.orange,
@@ -43,7 +43,7 @@ class ScheduleCard extends StatelessWidget {
                     ),
                     TextSpan(
                       text: '$username!',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                       ),
@@ -53,28 +53,28 @@ class ScheduleCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             "Where are we going today?",
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Card Jadwal
           Container(
             decoration: BoxDecoration(
-              color: Color(0xFFFFF0D9),
+              color: const Color(0xFFFFF0D9),
               borderRadius: BorderRadius.circular(20),
             ),
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title dan logo
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
@@ -94,9 +94,9 @@ class ScheduleCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // From Stasiun
-                Row(
+                const Row(
                   children: [
                     Icon(Icons.location_on, color: Colors.pink),
                     SizedBox(width: 8),
@@ -110,9 +110,9 @@ class ScheduleCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                Divider(),
+                const Divider(),
                 // To Stasiun
-                Row(
+                const Row(
                   children: [
                     Icon(Icons.location_on_outlined, color: Colors.pink),
                     SizedBox(width: 8),
@@ -126,7 +126,7 @@ class ScheduleCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 // Tombol
                 SizedBox(
                   width: double.infinity,
@@ -134,13 +134,16 @@ class ScheduleCard extends StatelessWidget {
                     onPressed: onBookingPressed,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pink[400],
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text(
+                    child: const Text(
                       "Input Code Booking",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),

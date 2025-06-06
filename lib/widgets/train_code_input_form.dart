@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 class TrainCodeInputForm extends StatelessWidget {
-  final VoidCallback onSubmit; // Tambahkan ini
+  final TextEditingController controller;
+  final VoidCallback onSubmit;
 
-  const TrainCodeInputForm({super.key, required this.onSubmit});
+  const TrainCodeInputForm({
+    super.key, 
+    required this.controller,
+    required this.onSubmit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +26,9 @@ class TrainCodeInputForm extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           decoration: InputDecoration(
-            hintText: 'Enter Your Train Code',
+            hintText: 'Enter Your Train Code (try: KA001)',
             filled: true,
             fillColor: Colors.white,
             contentPadding:
@@ -37,7 +43,7 @@ class TrainCodeInputForm extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: onSubmit, // Gunakan callback ini
+            onPressed: onSubmit,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange[300],
               foregroundColor: Colors.white,
@@ -46,7 +52,12 @@ class TrainCodeInputForm extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('Submit'),
+            child: const Text(
+              'Submit',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         )
       ],
