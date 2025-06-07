@@ -12,7 +12,11 @@ dependencies:
   circle_nav_bar: ^2.2.0
   http: ^1.1.0
   cupertino_icons: ^1.0.8
-  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.2
+  # Firebase dependencies
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.17.5
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +28,4 @@ flutter:
   assets:
     - assets/images/
     - assets/images/kai_logo.png
+    - assets/images/no_data.png

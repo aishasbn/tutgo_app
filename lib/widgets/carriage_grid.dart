@@ -9,14 +9,14 @@ class CarriageGrid extends StatelessWidget {
   final Function(String, int) onOccupancyChanged;
 
   const CarriageGrid({
-    Key? key,
+    super.key,
     required this.carriageOccupancy,
     required this.userCarriage,
     required this.userSeatNumber,
     required this.hasConfirmedSeat,
     required this.onConfirmSeat,
     required this.onOccupancyChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
