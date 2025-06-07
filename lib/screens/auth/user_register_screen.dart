@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../main_navigation_screen.dart';
 import 'user_login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserRegisterScreen extends StatefulWidget {
   const UserRegisterScreen({super.key});
