@@ -11,14 +11,10 @@ import 'screens/main_navigation_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    await Firebase.initializeApp();
-    print("Firebase initialized successfully!");
-  } catch (e) {
-    print("Firebase initialization error: $e");
-  }
-  
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
+
   runApp(const MyApp());
 }
 
@@ -33,10 +29,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.pink,
         fontFamily: 'Roboto',
       ),
-      // Set initial route
       initialRoute: '/',
-      
-      // Define all routes
       routes: {
         '/': (context) => const AuthWrapper(),
         '/account-type': (context) => const AccountTypeScreen(),
@@ -47,14 +40,11 @@ class MyApp extends StatelessWidget {
         '/train-code': (context) => const TrainCodeScreen(),
         '/detail': (context) => const DetailKeretaScreen(),
       },
-      
-      // Handle unknown routes
       onUnknownRoute: (settings) {
         return MaterialPageRoute(
           builder: (context) => const AuthWrapper(),
         );
       },
-      
       debugShowCheckedModeBanner: false,
     );
   }

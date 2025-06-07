@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../models/kereta_model.dart';
 
 class TrainListScreen extends StatelessWidget {
-  final List<Kereta> daftarKereta = [
+  final List<Kereta> daftarKereta = const [
     Kereta(
       kode: 'KA001',
-      nama: 'KA Argo Wilis',
+      nama: 'Argo Wilis',
       fromStasiun: 'Stasiun Mulyosari',
       toStasiun: 'Stasiun Keputih',
       jadwal: '06:30-07:00',
-      status: KeretaStatus.willArrive,
+      status: KeretaStatus.onRoute,
       arrivalCountdown: '00:05:00',
       route: [
         StasiunRoute(nama: 'Jombang', waktu: '06:35', isPassed: true),
@@ -17,7 +17,7 @@ class TrainListScreen extends StatelessWidget {
         StasiunRoute(nama: 'Malang', waktu: '8:45'),
         StasiunRoute(nama: 'Jogja Tugu', waktu: '10:35'),
       ],
-      gerbongs: const [],
+      gerbongs: [],
     ),
     Kereta(
       kode: 'KA002',
@@ -32,7 +32,7 @@ class TrainListScreen extends StatelessWidget {
         StasiunRoute(nama: 'Kertosono', waktu: '09:15', isActive: true),
         StasiunRoute(nama: 'Jakarta', waktu: '15:00'),
       ],
-      gerbongs: const [],
+      gerbongs: [],
     ),
     Kereta(
       kode: 'KA003',
@@ -47,7 +47,7 @@ class TrainListScreen extends StatelessWidget {
         StasiunRoute(nama: 'Kediri', waktu: '21:45', isPassed: true),
         StasiunRoute(nama: 'Jakarta', waktu: '06:00', isPassed: true),
       ],
-      gerbongs: const [],
+      gerbongs: [],
     ),
   ];
 

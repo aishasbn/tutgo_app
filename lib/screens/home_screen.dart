@@ -12,7 +12,7 @@ class HomeScreen extends StatelessWidget {
     final AuthService authService = AuthService();
     final User? currentUser = authService.currentUser;
     
-    // Get username from Firebase Auth or default
+    // Get username from current user or default
     String username = currentUser?.displayName ?? 
                      currentUser?.email?.split('@')[0] ?? 
                      "User";
@@ -26,7 +26,6 @@ class HomeScreen extends StatelessWidget {
               username: username,
               onBookingPressed: () {
                 print("Booking code input clicked!");
-                // Navigate ke train code screen
                 RouteHelper.navigateToTrainCode(context);
               },
             ),
@@ -49,11 +48,10 @@ class HomeScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Logout button (opsional)
+                        // Logout button
                         IconButton(
                           onPressed: () async {
                             await authService.signOut();
-                            // AuthWrapper akan otomatis redirect ke login
                             RouteHelper.navigateAndClearStack(context, RouteHelper.authWrapper);
                           },
                           icon: const Icon(
@@ -64,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Empty notifications illustration
+                    // User info and notifications
                     Expanded(
                       child: Center(
                         child: Column(
@@ -98,6 +96,20 @@ class HomeScreen extends StatelessWidget {
                                 color: Colors.grey[600],
                                 fontSize: 14,
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                            FutureBuilder<bool>(
+                              future: authService.isStaff(),
+                              builder: (context, snapshot) {
+                                String userType = snapshot.data == true ? 'STAFF' : 'USER';
+                                return Text(
+                                  "User Type: $userType",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

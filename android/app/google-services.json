@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "944159820601",
-    "project_id": "tutgo-app",
-    "storage_bucket": "tutgo-app.firebasestorage.app"
+    "project_number": "578677972534",
+    "project_id": "tutgo-train-tracker",
+    "storage_bucket": "tutgo-train-tracker.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:944159820601:android:49b8b19d577cca8e5536e8",
+        "mobilesdk_app_id": "1:578677972534:android:1a9858b7ccd0389e6ac297",
         "android_client_info": {
-          "package_name": "tutgo.com"
+          "package_name": "com.example.tutgo"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBTpX4Yl66Q3yllN-ZwR8RNO4OIA3-6snA"
+          "current_key": "AIzaSyCMsxj4v0-OU5_IT8SlJfm4Dbw4apCaoiI"
         }
       ],
       "services": {

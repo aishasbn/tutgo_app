@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import '../utils/route_helper.dart';
 import 'auth/account_type_screen.dart';
 import 'main_navigation_screen.dart';
 
@@ -10,8 +9,10 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthService authService = AuthService();
+
     return StreamBuilder<User?>(
-      stream: AuthService().authStateChanges,
+      stream: authService.authStateChanges,
       builder: (context, snapshot) {
         // Show loading while checking auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -37,7 +38,7 @@ class AuthWrapper extends StatelessWidget {
             ),
           );
         }
-        
+
         // If user is logged in, go to main screen
         if (snapshot.hasData && snapshot.data != null) {
           return const MainNavigationScreen();
