@@ -11,26 +11,81 @@ class FirebaseAuthService {
   // Auth state stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign in with email and password (User)
-  Future<User?> signInWithEmailPassword(String email, String password) async {
+  // Register new user dengan error handling yang lebih detail
+  Future<User?> registerWithEmailPassword(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
-      final UserCredential result = await _auth.signInWithEmailAndPassword(
+      print('Attempting to register user: $email'); // Debug log
+      
+      final UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      print('User created successfully: ${result.user?.uid}'); // Debug log
+
+      // Update display name
+      await result.user?.updateDisplayName(name);
+      print('Display name updated'); // Debug log
+
+      // Save user data to Firestore
+      await _firestore.collection('users').doc(result.user?.uid).set({
+        'name': name,
+        'email': email,
+        'userType': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      print('User data saved to Firestore'); // Debug log
       return result.user;
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
+      switch (e.code) {
+        case 'weak-password':
+          print('Error: Password terlalu lemah');
+          break;
+        case 'email-already-in-use':
+          print('Error: Email sudah digunakan');
+          break;
+        case 'invalid-email':
+          print('Error: Format email tidak valid');
+          break;
+        default:
+          print('Error: ${e.message}');
+      }
+      return null;
     } catch (e) {
-      print('Sign in error: $e');
+      print('General error during registration: $e');
       return null;
     }
   }
 
-  // Sign in with ID and password (Staff)
+  // Sign in with email and password
+  Future<User?> signInWithEmailPassword(String email, String password) async {
+    try {
+      print('Attempting to sign in user: $email');
+      final UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      print('Sign in successful: ${result.user?.uid}');
+      return result.user;
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException during sign in: ${e.code} - ${e.message}');
+      return null;
+    } catch (e) {
+      print('General error during sign in: $e');
+      return null;
+    }
+  }
+
+  // Rest of your methods...
   Future<User?> signInStaffWithId(String staffId, String password) async {
     try {
-      // Convert staff ID to email format
       String email = '$staffId@staff.tutgo.com';
-      
       final UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -42,37 +97,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Register new user
-  Future<User?> registerWithEmailPassword(
-    String name,
-    String email,
-    String password,
-  ) async {
-    try {
-      final UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Update display name
-      await result.user?.updateDisplayName(name);
-
-      // Save user data to Firestore
-      await _firestore.collection('users').doc(result.user?.uid).set({
-        'name': name,
-        'email': email,
-        'userType': 'user',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      return result.user;
-    } catch (e) {
-      print('Registration error: $e');
-      return null;
-    }
-  }
-
-  // Sign out
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -81,7 +105,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Check if user is staff
   Future<bool> isStaff() async {
     try {
       final user = currentUser;
@@ -93,7 +116,6 @@ class FirebaseAuthService {
         return data?['userType'] == 'staff';
       }
       
-      // Check if email contains staff domain
       return user.email?.contains('@staff.tutgo.com') ?? false;
     } catch (e) {
       print('Error checking staff status: $e');
@@ -101,7 +123,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Get user data
   Future<Map<String, dynamic>?> getUserData() async {
     try {
       final user = currentUser;
