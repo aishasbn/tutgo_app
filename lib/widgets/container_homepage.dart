@@ -66,7 +66,7 @@ class ScheduleCard extends StatelessWidget {
           // Card Jadwal
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF0D9),
+              color: const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.all(16),

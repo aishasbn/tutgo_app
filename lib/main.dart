@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/auth_wrapper.dart';
 import 'screens/detail_kereta_screen.dart';
 import 'screens/train_code_screen.dart';
+import 'screens/success_screen.dart';
 import 'screens/auth/account_type_screen.dart';
 import 'screens/auth/user_login_screen.dart';
 import 'screens/auth/staff_login_screen.dart';
@@ -24,10 +25,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Train Tracking App',
+      title: 'TutGo - Train Tracking App',
       theme: ThemeData(
         primarySwatch: Colors.pink,
         fontFamily: 'Roboto',
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
@@ -39,6 +41,7 @@ class MyApp extends StatelessWidget {
         '/main': (context) => const MainNavigationScreen(),
         '/train-code': (context) => const TrainCodeScreen(),
         '/detail': (context) => const DetailKeretaScreen(),
+        '/success': (context) => const SuccessScreen(),
       },
       onUnknownRoute: (settings) {
         return MaterialPageRoute(

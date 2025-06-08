@@ -10,6 +10,7 @@ class RouteHelper {
   static const String main = '/main';
   static const String trainCode = '/train-code';
   static const String detail = '/detail';
+  static const String success = '/success';
 
   // Navigation methods
   static void navigateToAccountType(BuildContext context) {
@@ -38,6 +39,10 @@ class RouteHelper {
 
   static void navigateToDetail(BuildContext context, {Object? arguments}) {
     Navigator.pushNamed(context, detail, arguments: arguments);
+  }
+
+  static void navigateToSuccess(BuildContext context) {
+    Navigator.pushNamed(context, success);
   }
 
   // Clear stack and navigate
