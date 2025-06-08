@@ -1,4 +1,6 @@
-val localProperties = java.util.Properties()
+import java.util.Properties
+
+val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
