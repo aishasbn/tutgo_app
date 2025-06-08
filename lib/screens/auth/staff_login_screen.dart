@@ -194,8 +194,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 
                 const SizedBox(height: 8),
-                
-                const Text(
+                                const Text(
                   'Please sign in to be continue',
                   style: TextStyle(
                     fontSize: 16,
@@ -335,3 +334,4 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     );
   }
 }
+

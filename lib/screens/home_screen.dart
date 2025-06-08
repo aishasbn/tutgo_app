@@ -4,26 +4,82 @@ import '../widgets/container_homepage.dart';
 import '../services/auth_service.dart';
 import '../utils/route_helper.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final AuthService authService = AuthService();
-    final User? currentUser = authService.currentUser;
-    
-    // Get username from current user or default
-    String username = currentUser?.displayName ?? 
-                     currentUser?.email?.split('@')[0] ?? 
-                     "User";
+  _HomeScreenState createState() => _HomeScreenState();
+}
 
+class _HomeScreenState extends State<HomeScreen> {
+  final AuthService _authService = AuthService();
+  String _username = "User";
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data setiap kali widget di-build ulang
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final User? currentUser = _authService.currentUser;
+      
+      if (currentUser != null) {
+        // Coba ambil data dari Firestore dulu
+        final userData = await _authService.getUserData();
+        
+        if (userData != null && userData['name'] != null) {
+          // Gunakan nama dari Firestore
+          setState(() {
+            _username = userData['name'];
+            _isLoading = false;
+          });
+        } else {
+          // Fallback ke Firebase Auth
+          setState(() {
+            _username = currentUser.displayName ?? 
+                      currentUser.email?.split('@')[0] ?? 
+                      "User";
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _username = "User";
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      // Fallback jika ada error
+      final User? currentUser = _authService.currentUser;
+      setState(() {
+        _username = currentUser?.displayName ?? 
+                   currentUser?.email?.split('@')[0] ?? 
+                   "User";
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEE5E5),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: SafeArea(
         child: Column(
           children: [
             ScheduleCard(
-              username: username,
+              username: _isLoading ? "Loading..." : _username,
               onBookingPressed: () {
                 print("Booking code input clicked!");
                 RouteHelper.navigateToTrainCode(context);
@@ -48,20 +104,59 @@ class HomeScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Logout button
-                        IconButton(
-                          onPressed: () async {
-                            await authService.signOut();
-                            RouteHelper.navigateAndClearStack(context, RouteHelper.authWrapper);
-                          },
-                          icon: const Icon(
-                            Icons.logout,
-                            color: Color(0xFFE91E63),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
+                    
+                    // // Testing info section
+                    // Container(
+                    //   width: double.infinity,
+                    //   padding: const EdgeInsets.all(16),
+                    //   margin: const EdgeInsets.only(bottom: 20),
+                    //   decoration: BoxDecoration(
+                    //     color: Colors.pink[50],
+                    //     borderRadius: BorderRadius.circular(12),
+                    //     border: Border.all(
+                    //       color: Colors.pink[200]!,
+                    //     ),
+                    //   ),
+                    //   child: Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     children: [
+                    //       Row(
+                    //         children: [
+                    //           Icon(
+                    //             Icons.info_outline,
+                    //             color: Colors.pink[400],
+                    //             size: 20,
+                    //           ),
+                    //           const SizedBox(width: 8),
+                    //           Text(
+                    //             'Kode Kereta untuk Testing:',
+                    //             style: TextStyle(
+                    //               fontWeight: FontWeight.bold,
+                    //               color: Colors.pink[400],
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       ),
+                    //       const SizedBox(height: 12),
+                    //       _buildTrainCodeItem('SBY-JKT-001', 'Surabaya → Jakarta', 'Sedang Berjalan'),
+                    //       _buildTrainCodeItem('JKT-SBY-001', 'Jakarta → Surabaya', 'Akan Tiba'),
+                    //       _buildTrainCodeItem('MLG-JKT-001', 'Malang → Jakarta', 'Selesai'),
+                    //       const SizedBox(height: 8),
+                    //       const Text(
+                    //         'Tap "Input Code Booking" untuk mencoba!',
+                    //         style: TextStyle(
+                    //           fontSize: 12,
+                    //           color: Colors.grey,
+                    //           fontStyle: FontStyle.italic,
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                    
                     // User info and notifications
                     Expanded(
                       child: Center(
@@ -71,15 +166,12 @@ class HomeScreen extends StatelessWidget {
                             Container(
                               width: 200,
                               height: 200,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.notifications_off,
-                                size: 80,
-                                color: Colors.grey[500],
-                              ),
+                              
+                              child: Image.asset(
+                              'assets/images/no_data.png',
+                              width: 120, // atau sesuaikan
+                              height: 120, 
+                            ),
                             ),
                             const SizedBox(height: 10),
                             const Text(
@@ -88,28 +180,6 @@ class HomeScreen extends StatelessWidget {
                                 color: Color(0xFFD84F9C),
                                 fontWeight: FontWeight.bold,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Welcome, $username!",
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            FutureBuilder<bool>(
-                              future: authService.isStaff(),
-                              builder: (context, snapshot) {
-                                String userType = snapshot.data == true ? 'STAFF' : 'USER';
-                                return Text(
-                                  "User Type: $userType",
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                );
-                              },
                             ),
                           ],
                         ),
@@ -124,4 +194,69 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildTrainCodeItem(String code, String route, String status) {
+    Color statusColor;
+    switch (status) {
+      case 'Sedang Berjalan':
+        statusColor = Colors.green;
+        break;
+      case 'Akan Tiba':
+        statusColor = Colors.orange;
+        break;
+      case 'Selesai':
+        statusColor = Colors.grey;
+        break;
+      default:
+        statusColor = Colors.blue;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.pink[100],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              code,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.pink[600],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              route,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10,
+              color: statusColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

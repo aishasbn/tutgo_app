@@ -39,12 +39,21 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
+        // Handle errors in auth state
+        if (snapshot.hasError) {
+          print('❌ Auth state error: ${snapshot.error}');
+          // Still show account type screen on error
+          return const AccountTypeScreen();
+        }
+
         // If user is logged in, go to main screen
         if (snapshot.hasData && snapshot.data != null) {
+          print('✅ User authenticated: ${snapshot.data!.uid}');
           return const MainNavigationScreen();
         }
         
         // If not logged in, go to account type selection
+        print('ℹ️ No authenticated user, showing account type screen');
         return const AccountTypeScreen();
       },
     );

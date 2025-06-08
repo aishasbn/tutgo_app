@@ -1,91 +1,89 @@
 import 'package:flutter/material.dart';
+import '../services/train_service.dart';
 import '../models/kereta_model.dart';
+import '../utils/route_helper.dart';
+import '../widgets/status_badge.dart';
 
-class TrainListScreen extends StatelessWidget {
-  final List<Kereta> daftarKereta = const [
-    Kereta(
-      kode: 'KA001',
-      nama: 'Argo Wilis',
-      fromStasiun: 'Stasiun Mulyosari',
-      toStasiun: 'Stasiun Keputih',
-      jadwal: '06:30-07:00',
-      status: KeretaStatus.onRoute,
-      arrivalCountdown: '00:05:00',
-      route: [
-        StasiunRoute(nama: 'Jombang', waktu: '06:35', isPassed: true),
-        StasiunRoute(nama: 'Madiun', waktu: '07:30', isActive: true),
-        StasiunRoute(nama: 'Malang', waktu: '8:45'),
-        StasiunRoute(nama: 'Jogja Tugu', waktu: '10:35'),
-      ],
-      gerbongs: [],
-    ),
-    Kereta(
-      kode: 'KA002',
-      nama: 'KA Bima',
-      fromStasiun: 'Stasiun Gubeng',
-      toStasiun: 'Stasiun Pasar Senen',
-      jadwal: '08:00-09:00',
-      status: KeretaStatus.onRoute,
-      route: [
-        StasiunRoute(nama: 'Surabaya', waktu: '08:00', isPassed: true),
-        StasiunRoute(nama: 'Mojokerto', waktu: '08:30', isPassed: true),
-        StasiunRoute(nama: 'Kertosono', waktu: '09:15', isActive: true),
-        StasiunRoute(nama: 'Jakarta', waktu: '15:00'),
-      ],
-      gerbongs: [],
-    ),
-    Kereta(
-      kode: 'KA003',
-      nama: 'KA Gajayana',
-      fromStasiun: 'Stasiun Malang',
-      toStasiun: 'Stasiun Gambir',
-      jadwal: '19:00-20:00',
-      status: KeretaStatus.finished,
-      route: [
-        StasiunRoute(nama: 'Malang', waktu: '19:00', isPassed: true),
-        StasiunRoute(nama: 'Blitar', waktu: '20:30', isPassed: true),
-        StasiunRoute(nama: 'Kediri', waktu: '21:45', isPassed: true),
-        StasiunRoute(nama: 'Jakarta', waktu: '06:00', isPassed: true),
-      ],
-      gerbongs: [],
-    ),
-  ];
-
+class TrainListScreen extends StatefulWidget {
   const TrainListScreen({super.key});
+
+  @override
+  _TrainListScreenState createState() => _TrainListScreenState();
+}
+
+class _TrainListScreenState extends State<TrainListScreen> {
+  final TrainService _trainService = TrainService();
+  List<Kereta> _trains = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrains();
+  }
+
+  Future<void> _loadTrains() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+
+      final trains = await _trainService.getAllTrains();
+      setState(() {
+        _trains = trains;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load train data: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshTrains() async {
+    await _loadTrains();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8F4F4),
-      appBar: AppBar(
-        title: Text('Daftar Kereta'),
-        backgroundColor: Color(0xFFE91E63),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFF8F4F4),
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Daftar Kereta Hari Ini',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFE91E63),
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'List of train data',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'All available trains',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 16),
+
+            // Content
             Expanded(
-              child: ListView.builder(
-                itemCount: daftarKereta.length,
-                itemBuilder: (context, index) {
-                  final kereta = daftarKereta[index];
-                  return _buildKeretaCard(context, kereta);
-                },
-              ),
+              child: _buildContent(),
             ),
           ],
         ),
@@ -93,164 +91,329 @@ class TrainListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildKeretaCard(BuildContext context, Kereta kereta) {
-    Color statusColor;
-    String statusText;
-    Color statusBgColor;
-    
-    switch (kereta.status) {
-      case KeretaStatus.willArrive:
-        statusColor = Color(0xFFFF8F00);
-        statusBgColor = Color(0xFFFFF3E0);
-        statusText = kereta.arrivalCountdown != null 
-            ? 'Will Arrive in ${kereta.arrivalCountdown}' 
-            : 'Will Arrive';
-        break;
-      case KeretaStatus.onRoute:
-        statusColor = Color(0xFFE91E63);
-        statusBgColor = Color(0xFFFCE4EC);
-        statusText = 'On Route';
-        break;
-      case KeretaStatus.finished:
-        statusColor = Color(0xFF4CAF50);
-        statusBgColor = Color(0xFFE8F5E8);
-        statusText = 'Finished';
-        break;
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Color(0xFFE91E63),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading train data...',
+              style: TextStyle(
+                color: Color(0xFFE91E63),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Color(0xFFE91E63), width: 1),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/detail',
-            arguments: kereta,
-          );
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.red[600],
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refreshTrains,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+              ),
+              child: const Text(
+                'Coba Lagi',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_trains.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.train,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No train data',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You havent input the train code',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refreshTrains,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+              ),
+              child: const Text(
+                'Refresh',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshTrains,
+      color: const Color(0xFFE91E63),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _trains.length,
+        itemBuilder: (context, index) {
+          final train = _trains[index];
+          return _buildTrainCard(train);
         },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      kereta.nama,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor, width: 1),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF8F00),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    kereta.fromStasiun,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFFF8F00),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                margin: EdgeInsets.only(left: 4, top: 4, bottom: 4),
-                child: Row(
+      ),
+    );
+  }
+
+  Widget _buildTrainCard(Kereta train) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            RouteHelper.navigateToDetail(context, arguments: train);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with code and status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 1,
-                      height: 16,
-                      color: Colors.grey[300],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE91E63).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        train.kode,
+                        style: const TextStyle(
+                          color: Color(0xFFE91E63),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    StatusBadge(status: train.status),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Train name
+                Text(
+                  train.nama,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Route
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Dari',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            train.fromStasiun,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        color: Colors.grey[400],
+                        size: 20,
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Ke',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            train.toStasiun,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.end,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE91E63),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    kereta.toStasiun,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFE91E63),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
-                      SizedBox(width: 4),
-                      Text(
-                        kereta.jadwal,
-                        style: TextStyle(
-                          fontSize: 12,
+
+                const SizedBox(height: 12),
+
+                // Schedule and countdown
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 16,
                           color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          train.jadwal,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (train.arrivalCountdown != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          train.arrivalCountdown!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Color(0xFFE91E63),
+                  ],
+                ),
+
+                // Gerbong info
+                if (train.gerbongs.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.train,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${train.gerbongs.length} gerbong',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Tap untuk detail',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

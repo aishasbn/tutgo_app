@@ -2,61 +2,71 @@ import 'package:flutter/material.dart';
 import '../models/kereta_model.dart';
 
 class StatusBadge extends StatelessWidget {
-  final Kereta kereta;
+  final KeretaStatus status;
 
   const StatusBadge({
     super.key,
-    required this.kereta,
+    required this.status,
   });
 
   @override
   Widget build(BuildContext context) {
-    String text;
-    Color backgroundColor;
-    Color textColor;
-    Color borderColor;
-
-    switch (kereta.status) {
-      case KeretaStatus.willArrive:
-        text = kereta.arrivalCountdown != null 
-            ? 'Will Arrive in - ${kereta.arrivalCountdown}' 
-            : 'Will Arrive';
-        backgroundColor = Color(0xFFFFF3E0);
-        textColor = Color(0xFFFF8F00);
-        borderColor = Color(0xFFFF8F00);
-        break;
-      case KeretaStatus.onRoute:
-        text = 'On Route';
-        backgroundColor = Color(0xFFFCE4EC);
-        textColor = Color(0xFFE91E63);
-        borderColor = Color(0xFFE91E63);
-        break;
-      case KeretaStatus.finished:
-        text = 'Finished';
-        backgroundColor = Color(0xFFE8F5E8);
-        textColor = Color(0xFF4CAF50);
-        borderColor = Color(0xFF4CAF50);
-        break;
-    }
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: 1),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: _getStatusColor().withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _getStatusColor().withOpacity(0.3),
         ),
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: _getStatusColor(),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _getStatusText(),
+            style: TextStyle(
+              color: _getStatusColor(),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Color _getStatusColor() {
+    switch (status) {
+      case KeretaStatus.willArrive:
+        return Colors.orange;
+      case KeretaStatus.onRoute:
+        return Colors.green;
+      case KeretaStatus.finished:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText() {
+    switch (status) {
+      case KeretaStatus.willArrive:
+        return 'Akan Tiba';
+      case KeretaStatus.onRoute:
+        return 'Berjalan';
+      case KeretaStatus.finished:
+        return 'Selesai';
+    }
   }
 }
