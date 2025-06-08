@@ -3,64 +3,82 @@ import 'package:flutter/material.dart';
 class SuccessWidget extends StatelessWidget {
   final VoidCallback onContinue;
 
-  const SuccessWidget({super.key, required this.onContinue});
+  const SuccessWidget({
+    super.key,
+    required this.onContinue,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.check_circle_outline,
-              color: Colors.green,
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Success Icon
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
               size: 80,
+              color: Colors.green,
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Success',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Success Title
+          const Text(
+            'Berhasil!',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Click next to view\nyour train tracking',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-              ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Success Message
+          Text(
+            'Operasi telah berhasil dilakukan.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
+          ),
+          
+          const SizedBox(height: 48),
+          
+          // Continue Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
               onPressed: onContinue,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                backgroundColor: const Color(0xFFE91E63),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
-                'CONTINUE',
+                'Lanjutkan',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

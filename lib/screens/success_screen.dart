@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tutgo/widgets/success_widget.dart'; // sesuaikan path
+import '../widgets/success_widget.dart';
+import '../utils/route_helper.dart';
 
 class SuccessScreen extends StatelessWidget {
   const SuccessScreen({super.key});
@@ -11,7 +12,8 @@ class SuccessScreen extends StatelessWidget {
       body: SafeArea(
         child: SuccessWidget(
           onContinue: () {
-            Navigator.pop(context); // kembali ke sebelumnya, bisa diganti jika ingin navigasi lain
+            // Navigate back to main screen
+            RouteHelper.navigateAndClearStack(context, RouteHelper.main);
           },
         ),
       ),

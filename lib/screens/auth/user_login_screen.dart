@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../utils/route_helper.dart';
@@ -32,6 +33,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     });
 
     try {
+      // Check connection first
+      final hasConnection = await _authService.checkConnection();
+      if (!hasConnection) {
+        _showErrorDialog('Tidak ada koneksi internet. Periksa koneksi Anda dan coba lagi.');
+        return;
+      }
+
       final result = await _authService.signInWithEmailPassword(
         _emailController.text.trim(),
         _passwordController.text,
@@ -44,7 +52,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         _showErrorDialog('Login gagal. Periksa email dan password Anda.');
       }
     } catch (e) {
-      _showErrorDialog('Terjadi kesalahan: $e');
+      print('Login error: $e');
+      _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
     } finally {
       setState(() {
         _isLoading = false;
@@ -52,16 +61,66 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    
+    if (email.isEmpty) {
+      _showErrorDialog('Masukkan email terlebih dahulu');
+      return;
+    }
+
+    try {
+      await _authService.resetPassword(email);
+      _showSuccessDialog('Email reset password telah dikirim ke $email');
+    } catch (e) {
+      _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Error'),
+          ],
+        ),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Color(0xFFE91E63)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Berhasil'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Color(0xFFE91E63)),
+            ),
           ),
         ],
       ),
@@ -178,7 +237,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 ),
                 
                 const SizedBox(height: 40),
-                
                 // Login form title
                 const Text(
                   'Login to your account',
@@ -216,6 +274,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: 'ndaboi@gmail.com',
                     prefixIcon: const Icon(Icons.email_outlined),
@@ -233,12 +292,16 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Color(0xFFE91E63)),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
+                    ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Email tidak boleh kosong';
                     }
-                    if (!value.contains('@')) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
                       return 'Format email tidak valid';
                     }
                     return null;
@@ -258,10 +321,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 ),
                 
                 const SizedBox(height: 8),
-                
-                TextFormField(
+                                TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  enabled: !_isLoading,
                   decoration: InputDecoration(
                     hintText: '••••••••••',
                     prefixIcon: const Icon(Icons.lock_outline),
@@ -289,6 +352,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Color(0xFFE91E63)),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -307,9 +374,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // TODO: Implement forgot password
-                    },
+                    onPressed: _isLoading ? null : _forgotPassword,
                     child: const Text(
                       'Lupa kata sandi?',
                       style: TextStyle(
@@ -319,7 +384,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     ),
                   ),
                 ),
-                
                 const SizedBox(height: 24),
                 
                 // Login button
@@ -335,7 +399,28 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Logging in...',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          )
                         : const Text(
                             'Login',
                             style: TextStyle(
@@ -370,7 +455,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () {
+                    onPressed: _isLoading ? null : () {
                       RouteHelper.navigateToUserRegister(context);
                     },
                     style: OutlinedButton.styleFrom(
@@ -398,3 +483,4 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     );
   }
 }
+

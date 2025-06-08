@@ -97,7 +97,7 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StatusBadge(kereta: kereta),
+                    StatusBadge(status: kereta.status),
                     SizedBox(height: 16),
                     RouteCard(kereta: kereta),
                     SizedBox(height: 16),
