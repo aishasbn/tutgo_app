@@ -7,7 +7,7 @@ import 'screens/auth/staff_login_screen.dart';
 import 'screens/auth/user_register_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/train_code_screen.dart';
-import 'screens//detail_kereta_screen.dart';
+import 'screens/detail_kereta_screen.dart';
 import 'screens/success_screen.dart';
 import 'kondektur/screens/home_screen.dart';
 import 'kondektur/screens/enhanced_enter_code_screen.dart';
@@ -37,8 +37,8 @@ class TutGoApp extends StatelessWidget {
       title: 'TutGo - Train Tracking App',
       theme: ThemeData(
         primarySwatch: Colors.pink,
-        primaryColor: const Color(0xFFD75A9E),
-        scaffoldBackgroundColor: const Color(0xFFFFF5EE),
+        primaryColor: const Color(0xFFE91E63),
+        scaffoldBackgroundColor: const Color(0xFFF8F4F4),
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
@@ -51,8 +51,8 @@ class TutGoApp extends StatelessWidget {
         '/staff-login': (context) => const StaffLoginScreen(),
         '/user-register': (context) => const UserRegisterScreen(),
         
-        // Passenger routes
-        '/passenger-main': (context) => const MainNavigationScreen(),
+        // Main routes
+        '/main': (context) => const MainNavigationScreen(),
         '/train-code': (context) => const TrainCodeScreen(),
         '/detail': (context) => const DetailKeretaScreen(),
         '/success': (context) => const SuccessScreen(),

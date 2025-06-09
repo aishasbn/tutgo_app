@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
 class ConductorHomeScreen extends StatefulWidget {
-  const ConductorHomeScreen({Key? key}) : super(key: key);
+  const ConductorHomeScreen({super.key});
 
   @override
   _ConductorHomeScreenState createState() => _ConductorHomeScreenState();

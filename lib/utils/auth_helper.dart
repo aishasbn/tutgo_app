@@ -1,119 +1,44 @@
-import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 
 class AuthHelper {
   static final AuthService _authService = AuthService();
 
-  // Check if current user is authenticated
-  static bool get isAuthenticated => _authService.currentUser != null;
-
-  // Get current user ID
-  static String? get currentUserId => _authService.currentUser?.uid;
-
-  // Get current user email
-  static String? get currentUserEmail => _authService.currentUser?.email;
-
   // Check if current user is staff
   static Future<bool> isCurrentUserStaff() async {
     try {
+      final user = _authService.currentUser;
+      if (user == null) return false;
+
       return await _authService.isStaff();
     } catch (e) {
-      print('Error checking staff status: $e');
+      print('❌ Error checking if user is staff: $e');
       return false;
     }
   }
 
-  // Get user display name with fallback
-  static Future<String> getUserDisplayName() async {
+  // Get current user data
+  static Future<Map<String, dynamic>?> getCurrentUserData() async {
     try {
-      final userData = await _authService.getUserData();
-      if (userData != null && userData['name'] != null) {
-        return userData['name'];
-      }
-      
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        return currentUser.displayName ?? 
-               currentUser.email?.split('@')[0] ?? 
-               'User';
-      }
-      
-      return 'User';
+      return await _authService.getUserData();
     } catch (e) {
-      print('Error getting user display name: $e');
-      return 'User';
+      print('❌ Error getting current user data: $e');
+      return null;
     }
   }
 
-  // Safe logout with error handling
-  static Future<bool> safeLogout(BuildContext context) async {
-    try {
-      await _authService.signOut();
-      return true;
-    } catch (e) {
-      print('Error during logout: $e');
-      
-      // Show error dialog
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Logout Error'),
-            content: Text('Gagal logout: ${e.toString()}'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-      
-      return false;
-    }
+  // Check if user is authenticated
+  static bool isAuthenticated() {
+    return _authService.currentUser != null;
   }
 
-  // Validate email format
-  static bool isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  // Get current user
+  static User? getCurrentUser() {
+    return _authService.currentUser;
   }
 
-  // Validate staff ID format
-  static bool isValidStaffId(String staffId) {
-    return RegExp(r'^STAFF\d{3}$').hasMatch(staffId.toUpperCase());
-  }
-
-  // Format staff email from ID
-  static String formatStaffEmail(String staffId) {
-    return '${staffId.toLowerCase()}@staff.tutgo.com';
-  }
-
-  // Check if email is staff email
-  static bool isStaffEmail(String email) {
-    return email.endsWith('@staff.tutgo.com');
-  }
-
-  // Get user type string
-  static Future<String> getUserType() async {
-    try {
-      final isStaff = await _authService.isStaff();
-      return isStaff ? 'Staff' : 'User';
-    } catch (e) {
-      print('Error getting user type: $e');
-      return 'User';
-    }
-  }
-
-  // Refresh user data
-  static Future<void> refreshUserData() async {
-    try {
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        await currentUser.reload();
-      }
-    } catch (e) {
-      print('Error refreshing user data: $e');
-    }
+  // Sign out
+  static Future<void> signOut() async {
+    await _authService.signOut();
   }
 }

@@ -328,7 +328,7 @@ import '../widgets/action_button_widget.dart';
 import '../services/route_service.dart';
 
 class EnterCodeScreen extends StatefulWidget {
-  const EnterCodeScreen({Key? key}) : super(key: key);
+  const EnterCodeScreen({super.key});
 
   @override
   State<EnterCodeScreen> createState() => _EnterCodeScreenState();
@@ -532,7 +532,7 @@ import '../widgets/action_button_widget.dart';
 import '../widgets/bottom_navigation_widget.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -595,7 +595,7 @@ import '../widgets/profile_info_item_widget.dart';
 import '../widgets/bottom_navigation_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -690,9 +690,9 @@ class TrackingScreen extends StatefulWidget {
   final String routeCode;
   
   const TrackingScreen({
-    Key? key,
+    super.key,
     required this.routeCode,
-  }) : super(key: key);
+  });
 
   @override
   State<TrackingScreen> createState() => _TrackingScreenState();

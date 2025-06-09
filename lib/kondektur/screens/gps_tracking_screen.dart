@@ -9,9 +9,9 @@ class GPSTrackingScreen extends StatefulWidget {
   final String routeCode;
 
   const GPSTrackingScreen({
-    Key? key,
+    super.key,
     required this.routeCode,
-  }) : super(key: key);
+  });
 
   @override
   State<GPSTrackingScreen> createState() => _GPSTrackingScreenState();
@@ -25,8 +25,8 @@ class _GPSTrackingScreenState extends State<GPSTrackingScreen> {
   RouteData? _routeData;
   RouteProgress? _routeProgress;
   Position? _currentPosition;
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
   bool _isTracking = false;
   String _trackingStatus = 'Initializing...';
   

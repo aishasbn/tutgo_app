@@ -8,12 +8,12 @@ class ProfileInfoItemWidget extends StatelessWidget {
   final Function()? onTap;
 
   const ProfileInfoItemWidget({
-    Key? key,
+    super.key,
     required this.label,
     required this.value,
     this.isEditable = false,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

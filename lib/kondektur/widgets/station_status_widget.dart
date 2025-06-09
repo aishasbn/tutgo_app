@@ -9,14 +9,14 @@ class StationStatusWidget extends StatelessWidget {
   final DateTime? actualArrivalTime;
 
   const StationStatusWidget({
-    Key? key,
+    super.key,
     required this.stationName,
     this.isPassed = false,
     this.isCurrent = false,
     this.arrivalTime,
     this.departureTime,
     this.actualArrivalTime,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

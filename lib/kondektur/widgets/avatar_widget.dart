@@ -7,11 +7,11 @@ class AvatarWidget extends StatelessWidget {
   final Color backgroundColor;
 
   const AvatarWidget({
-    Key? key,
+    super.key,
     this.imageUrl,
     this.size = 60.0,
     this.backgroundColor = const Color(0xFFFFBB54),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

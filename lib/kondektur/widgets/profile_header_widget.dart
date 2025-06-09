@@ -7,11 +7,11 @@ class ProfileHeaderWidget extends StatelessWidget {
   final String? imageUrl;
 
   const ProfileHeaderWidget({
-    Key? key,
+    super.key,
     required this.name,
     required this.role,
     this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

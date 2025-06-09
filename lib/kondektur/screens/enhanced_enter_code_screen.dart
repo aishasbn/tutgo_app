@@ -6,7 +6,7 @@ import 'package:tutgo/kondektur/models/route_models.dart';
 import 'gps_tracking_screen.dart';
 
 class EnhancedEnterCodeScreen extends StatefulWidget {
-  const EnhancedEnterCodeScreen({Key? key}) : super(key: key);
+  const EnhancedEnterCodeScreen({super.key});
 
   @override
   State<EnhancedEnterCodeScreen> createState() => _EnhancedEnterCodeScreenState();

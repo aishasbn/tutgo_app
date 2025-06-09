@@ -11,7 +11,7 @@ class ActionButtonWidget extends StatelessWidget {
   final double borderRadius;
 
   const ActionButtonWidget({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.icon,
@@ -19,7 +19,7 @@ class ActionButtonWidget extends StatelessWidget {
     this.textColor = Colors.white,
     this.height = 50.0,
     this.borderRadius = 8.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

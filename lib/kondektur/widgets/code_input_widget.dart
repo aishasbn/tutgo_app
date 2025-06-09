@@ -9,12 +9,12 @@ class CodeInputWidget extends StatefulWidget {
   final String? initialValue;
 
   const CodeInputWidget({
-    Key? key,
+    super.key,
     this.codeLength = 6,
     required this.onCompleted,
     this.onCodeChanged,
     this.initialValue,
-  }) : super(key: key);
+  });
 
   @override
   State<CodeInputWidget> createState() => _CodeInputWidgetState();

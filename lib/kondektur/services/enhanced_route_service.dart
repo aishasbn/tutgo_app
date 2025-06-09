@@ -20,7 +20,7 @@ class EnhancedRouteService {
   // Auto-detection settings
   static const double STATION_DETECTION_RADIUS = 50.0; // Reduced for testing
   static const int STATION_DWELL_TIME = 3; // Reduced for testing
-  static Map<String, DateTime> _stationDwellTimes = {};
+  static final Map<String, DateTime> _stationDwellTimes = {};
   
   // Stream controllers for real-time updates
   static final StreamController<Position> _positionController = 

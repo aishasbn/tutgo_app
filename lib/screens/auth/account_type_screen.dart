@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../utils/route_helper.dart';
 
-class AccountTypeScreen extends StatelessWidget {
+class AccountTypeScreen extends StatefulWidget {
   const AccountTypeScreen({super.key});
+
+  @override
+  _AccountTypeScreenState createState() => _AccountTypeScreenState();
+}
+
+class _AccountTypeScreenState extends State<AccountTypeScreen> {
+  String selectedType = 'user'; // 'user' or 'staff'
 
   @override
   Widget build(BuildContext context) {
@@ -13,95 +21,60 @@ class AccountTypeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
               
-              // App Logo/Title
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE91E63),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.train,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
+              // Title
               const Text(
-                'TutGo',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFE91E63),
-                ),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              const Text(
-                'Train Tracking Application',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              
-              const SizedBox(height: 60),
-              
-              const Text(
-                'Choose your account type',
+                'Choose Your Account Type',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
+                textAlign: TextAlign.center,
               ),
               
               const SizedBox(height: 40),
               
-              // Account type options
+              // Account type selection
               Row(
                 children: [
                   // Staff option
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/staff-login');
+                        setState(() {
+                          selectedType = 'staff';
+                        });
                       },
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[300]!),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: selectedType == 'staff' 
+                                ? const Color(0xFFE91E63) 
+                                : Colors.grey[300]!,
+                            width: selectedType == 'staff' ? 2 : 1,
+                          ),
                         ),
                         child: Column(
                           children: [
                             Container(
-                              width: 80,
-                              height: 80,
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFE91E63).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.person_pin,
-                                size: 40,
+                                size: 60,
                                 color: Color(0xFFE91E63),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             const Text(
                               'Staff',
                               style: TextStyle(
@@ -110,72 +83,56 @@ class AccountTypeScreen extends StatelessWidget {
                                 color: Colors.black,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Kondektur',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                   
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 16),
                   
                   // User option
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/user-login');
+                        setState(() {
+                          selectedType = 'user';
+                        });
                       },
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey[300]!),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: selectedType == 'user' 
+                                ? const Color(0xFFE91E63) 
+                                : Colors.grey[300]!,
+                            width: selectedType == 'user' ? 2 : 1,
+                          ),
                         ),
                         child: Column(
                           children: [
                             Container(
-                              width: 80,
-                              height: 80,
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFBB54).withOpacity(0.1),
+                                color: const Color(0xFFE91E63).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.luggage,
-                                size: 40,
-                                color: Color(0xFFFFBB54),
+                                size: 60,
+                                color: Color(0xFFE91E63),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             const Text(
                               'Pengunjung',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Penumpang',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
                               ),
                             ),
                           ],
@@ -186,18 +143,36 @@ class AccountTypeScreen extends StatelessWidget {
                 ],
               ),
               
-              const Spacer(),
+              const SizedBox(height: 40),
               
-              // Footer
-              const Text(
-                'Select your role to continue',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
+              // Continue button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (selectedType == 'staff') {
+                      RouteHelper.navigateToStaffLogin(context);
+                    } else {
+                      RouteHelper.navigateToUserLogin(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE91E63),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-              
-              const SizedBox(height: 20),
             ],
           ),
         ),

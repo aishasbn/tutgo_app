@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../utils/route_helper.dart';
@@ -33,6 +32,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     });
 
     try {
+      print('🔄 Starting user login for: ${_emailController.text.trim()}');
+      
       // Check connection first
       final hasConnection = await _authService.checkConnection();
       if (!hasConnection) {
@@ -40,24 +41,44 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         return;
       }
 
+      // Add a small delay to ensure Firebase is ready
+      await Future.delayed(const Duration(milliseconds: 500));
+
       final result = await _authService.signInWithEmailPassword(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
       if (result != null) {
+        print('✅ Login successful, navigating to main screen');
+        
+        // Add another small delay before navigation
+        await Future.delayed(const Duration(milliseconds: 300));
+        
         // Navigate to main screen and clear stack
         RouteHelper.navigateAndClearStack(context, RouteHelper.main);
       } else {
         _showErrorDialog('Login gagal. Periksa email dan password Anda.');
       }
     } catch (e) {
-      print('Login error: $e');
-      _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+      print('❌ Login error: $e');
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('StateError: ', '');
+      
+      // Handle specific error types
+      if (errorMessage.contains('PigeonUserDetails') || errorMessage.contains('List<Object?>')) {
+        errorMessage = 'Terjadi kesalahan teknis. Silakan tutup aplikasi dan buka kembali, lalu coba lagi.';
+      } else if (errorMessage.contains('network') || errorMessage.contains('connection')) {
+        errorMessage = 'Koneksi internet bermasalah. Periksa koneksi Anda dan coba lagi.';
+      }
+      
+      _showErrorDialog(errorMessage);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -483,4 +504,3 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     );
   }
 }
-

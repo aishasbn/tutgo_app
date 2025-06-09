@@ -32,12 +32,22 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     });
 
     try {
+      print('🔄 Starting staff login for: ${_idController.text.trim()}');
+      
+      // Add a small delay to ensure Firebase is ready
+      await Future.delayed(const Duration(milliseconds: 500));
+
       final result = await _authService.signInStaffWithId(
         _idController.text.trim(),
         _passwordController.text,
       );
 
       if (result != null) {
+        print('✅ Staff login successful, navigating to main screen');
+        
+        // Add another small delay before navigation
+        await Future.delayed(const Duration(milliseconds: 300));
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -48,11 +58,26 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         _showErrorDialog('Login gagal. Periksa ID dan password Anda.');
       }
     } catch (e) {
-      _showErrorDialog('Terjadi kesalahan: $e');
+      print('❌ Staff login error: $e');
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('StateError: ', '');
+      
+      // Handle specific error types
+      if (errorMessage.contains('PigeonUserDetails') || errorMessage.contains('List<Object?>')) {
+        errorMessage = 'Terjadi kesalahan teknis. Silakan tutup aplikasi dan buka kembali, lalu coba lagi.';
+      } else if (errorMessage.contains('network') || errorMessage.contains('connection')) {
+        errorMessage = 'Koneksi internet bermasalah. Periksa koneksi Anda dan coba lagi.';
+      } else if (errorMessage.contains('user-not-found') || errorMessage.contains('Staff ID tidak ditemukan')) {
+        errorMessage = 'Staff ID tidak ditemukan. Hubungi administrator untuk membuat akun staff.';
+      }
+      
+      _showErrorDialog(errorMessage);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -334,4 +359,3 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     );
   }
 }
-

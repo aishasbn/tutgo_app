@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
+                            SizedBox(
                               width: 200,
                               height: 200,
                               
