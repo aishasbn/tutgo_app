@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/kereta_model.dart';
-import '../widgets/custom_navbar.dart';
-import '../widgets/custom_popup.dart';
-import '../widgets/status_badge.dart';
-import '../widgets/route_card.dart';
-import '../widgets/schedule_card.dart';
-import '../widgets/route_timeline.dart';
-import '../widgets/carriage_information.dart';
-import '../widgets/finish_button.dart';
+import '../../models/kereta_model.dart';
+import '../../widgets/custom_navbar.dart';
+import '../../widgets/custom_popup.dart';
+import '../../widgets/status_badge.dart';
+import '../../widgets/route_card.dart';
+import '../../widgets/schedule_card.dart';
+import '../../widgets/route_timeline.dart';
+import '../../widgets/carriage_information.dart';
+import '../../widgets/finish_button.dart';
 
 class DetailKeretaScreen extends StatefulWidget {
   const DetailKeretaScreen({super.key});
