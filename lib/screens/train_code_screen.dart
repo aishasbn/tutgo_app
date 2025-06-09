@@ -17,11 +17,13 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
   final TrainService _trainService = TrainService();
   bool _isLoading = false;
   List<String> _availableCodes = [];
+  String _debugMessage = '';
 
   @override
   void initState() {
     super.initState();
     _loadAvailableCodes();
+    _debugFirebaseData();
   }
 
   @override
@@ -30,14 +32,35 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
     super.dispose();
   }
 
+  Future<void> _debugFirebaseData() async {
+    try {
+      await _trainService.debugPrintAllTrains();
+    } catch (e) {
+      print('Debug error: $e');
+    }
+  }
+
   Future<void> _loadAvailableCodes() async {
+    setState(() {
+      _isLoading = true;
+      _debugMessage = 'Loading available train codes...';
+    });
+
     try {
       final codes = await _trainService.getAvailableTrainCodes();
       setState(() {
         _availableCodes = codes;
+        _debugMessage = 'Found ${codes.length} available train codes: $codes';
       });
     } catch (e) {
+      setState(() {
+        _debugMessage = 'Error loading codes: $e';
+      });
       print('Error loading available codes: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -51,6 +74,7 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
 
     setState(() {
       _isLoading = true;
+      _debugMessage = 'Searching for train with code: $code';
     });
 
     try {
@@ -58,13 +82,22 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
       final kereta = await _trainService.getTrainByCode(code);
       
       if (kereta != null) {
+        setState(() {
+          _debugMessage = 'Train found: ${kereta.nama}';
+        });
         // Navigate ke detail kereta dengan data dari Firebase
         RouteHelper.navigateToDetail(context, arguments: kereta);
       } else {
+        setState(() {
+          _debugMessage = 'Train not found with code: $code';
+        });
         // Jika tidak ditemukan, tampilkan kode yang tersedia
         _showTrainNotFoundDialog();
       }
     } catch (e) {
+      setState(() {
+        _debugMessage = 'Error searching train: $e';
+      });
       _showErrorDialog('Terjadi kesalahan: $e');
     } finally {
       setState(() {
@@ -216,6 +249,38 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
               ),
             ),
             
+            // Debug message
+            if (_debugMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[400]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Debug Info:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _debugMessage,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
             // Available codes section
             if (_availableCodes.isNotEmpty)
               Padding(
@@ -288,4 +353,3 @@ class _TrainCodeScreenState extends State<TrainCodeScreen> {
     );
   }
 }
-

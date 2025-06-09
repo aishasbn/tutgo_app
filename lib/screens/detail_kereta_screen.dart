@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../models/kereta_model.dart';
-import '../../widgets/custom_navbar.dart';
 import '../../widgets/custom_popup.dart';
-import '../../widgets/status_badge.dart';
 import '../../widgets/route_card.dart';
 import '../../widgets/schedule_card.dart';
 import '../../widgets/route_timeline.dart';
 import '../../widgets/carriage_information.dart';
 import '../../widgets/finish_button.dart';
+import '../services/train_service.dart';
 
 class DetailKeretaScreen extends StatefulWidget {
   const DetailKeretaScreen({super.key});
@@ -18,6 +17,7 @@ class DetailKeretaScreen extends StatefulWidget {
 
 class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
   late Kereta kereta;
+  final TrainService _trainService = TrainService.instance;
   
   // State untuk carriage information
   Map<String, int> carriageOccupancy = {
@@ -34,16 +34,34 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
   String? userCarriage;
   int? userSeatNumber;
   bool hasConfirmedSeat = false;
+  bool showFinishButton = false;
 
   @override
   void initState() {
     super.initState();
     _assignUserSeat();
+    _loadSeatConfirmation();
+    _startFinishTimer();
   }
 
   void _assignUserSeat() {
     userCarriage = 'CA';
     userSeatNumber = 8;
+  }
+
+  void _loadSeatConfirmation() {
+    hasConfirmedSeat = _trainService.isSeatConfirmed;
+  }
+
+  void _startFinishTimer() {
+    // Show finish button after 1 minute for testing
+    Future.delayed(const Duration(minutes: 1), () {
+      if (mounted) {
+        setState(() {
+          showFinishButton = true;
+        });
+      }
+    });
   }
 
   @override
@@ -56,36 +74,61 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8F4F4),
+      backgroundColor: const Color(0xFFF8F4F4),
       body: SafeArea(
         child: Column(
           children: [
-            // Status bar
+            // Header dengan back button - improved spacing
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Icon(Icons.arrow_back, color: Colors.black),
-                  ),
-                  Text(
-                    '12:00',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.black87,
+                        size: 22,
+                      ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Icon(Icons.signal_cellular_4_bar, size: 16, color: Colors.black),
-                      SizedBox(width: 4),
-                      Icon(Icons.wifi, size: 16, color: Colors.black),
-                      SizedBox(width: 4),
-                      Icon(Icons.battery_full, size: 16, color: Colors.black),
-                    ],
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Train Details',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          kereta.kode,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -93,18 +136,53 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
             
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StatusBadge(status: kereta.status),
-                    SizedBox(height: 16),
+                    // Will Arrive status badge at top
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.blue.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 20,
+                            color: Colors.blue[600],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Will Arrive',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
                     RouteCard(kereta: kereta),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     ScheduleCard(kereta: kereta),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     RouteTimeline(route: kereta.route),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     CarriageInformation(
                       carriageOccupancy: carriageOccupancy,
                       userCarriage: userCarriage,
@@ -113,8 +191,8 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
                       onConfirmSeat: _confirmSeat,
                       onOccupancyChanged: _updateOccupancy,
                     ),
-                    SizedBox(height: 20),
-                    if (kereta.status == KeretaStatus.onRoute)
+                    const SizedBox(height: 32),
+                    if (showFinishButton)
                       FinishButton(
                         kereta: kereta,
                         onPressed: _handleFinish,
@@ -126,12 +204,7 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CustomNavBar(
-        onItemSelected: (index) {
-          // Handle navigation if needed
-        },
-        selectedIndex: 1,
-      ),
+      // No bottom navigation bar for detail screen
     );
   }
 
@@ -147,6 +220,10 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
             carriageOccupancy[userCarriage!] = carriageOccupancy[userCarriage!]! + 1;
           }
         });
+        
+        // Save confirmation to service
+        _trainService.confirmSeat();
+        
         Navigator.of(context).pop();
       },
     );
@@ -158,10 +235,10 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
     });
   }
 
-  void _handleFinish() {
-    setState(() {
-      kereta = kereta.copyWith(status: KeretaStatus.finished);
-    });
+  void _handleFinish() async {
+    // Clear active trip dari service
+    await _trainService.clearActiveTrip();
+    
     _showFinishPopup();
   }
 
@@ -170,7 +247,11 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
       context: context,
       onBackToHome: () {
         Navigator.of(context).pop();
-        Navigator.of(context).pop();
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/main',
+          (route) => false,
+        );
       },
     );
   }
@@ -182,7 +263,7 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
       fromStasiun: 'Stasiun Mulyosari',
       toStasiun: 'Stasiun Keputih',
       jadwal: '06:30-07:00',
-      status: KeretaStatus.onRoute,
+      status: KeretaStatus.willArrive,
       arrivalCountdown: '00:05:00',
       route: [
         StasiunRoute(nama: 'Jombang', waktu: '06:35', isPassed: true),

@@ -52,27 +52,49 @@ class AuthWrapper extends StatelessWidget {
           print('✅ User authenticated: ${snapshot.data!.uid}');
           
           return FutureBuilder<bool>(
-            future: authService.isStaff(),
+            future: _checkStaffRoleWithRetry(authService),
             builder: (context, staffSnapshot) {
+              // Show loading while checking role
               if (staffSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
                   backgroundColor: Color(0xFFF8F4F4),
                   body: Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFE91E63),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          color: Color(0xFFE91E63),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Checking user role...',
+                          style: TextStyle(
+                            color: Color(0xFFE91E63),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
               }
               
+              // Handle role check error
+              if (staffSnapshot.hasError) {
+                print('❌ Role check error: ${staffSnapshot.error}');
+                // Default to user if role check fails
+                return const MainNavigationScreen();
+              }
+              
               final isStaff = staffSnapshot.data ?? false;
-              print('ℹ️ User role: ${isStaff ? 'Staff' : 'User'}');
+              print('ℹ️ User role determined: ${isStaff ? 'Staff/Kondektur' : 'User'}');
               
               if (isStaff) {
-                // Navigate to conductor screens
+                print('🚂 Navigating to ConductorHomeScreen');
                 return const ConductorHomeScreen();
               } else {
-                // Navigate to passenger screens
+                print('👤 Navigating to MainNavigationScreen');
                 return const MainNavigationScreen();
               }
             },
@@ -84,5 +106,37 @@ class AuthWrapper extends StatelessWidget {
         return const AccountTypeScreen();
       },
     );
+  }
+
+  // Helper method to check staff role with retry mechanism
+  Future<bool> _checkStaffRoleWithRetry(AuthService authService) async {
+    int maxRetries = 3;
+    int currentRetry = 0;
+    
+    while (currentRetry < maxRetries) {
+      try {
+        print('🔍 Checking staff role (attempt ${currentRetry + 1}/$maxRetries)');
+        
+        // Add small delay to ensure Firebase is ready
+        if (currentRetry > 0) {
+          await Future.delayed(Duration(milliseconds: 500 * currentRetry));
+        }
+        
+        final isStaff = await authService.isStaff();
+        print('✅ Staff role check result: $isStaff');
+        return isStaff;
+        
+      } catch (e) {
+        currentRetry++;
+        print('❌ Staff role check failed (attempt $currentRetry): $e');
+        
+        if (currentRetry >= maxRetries) {
+          print('❌ Max retries reached, defaulting to user role');
+          return false;
+        }
+      }
+    }
+    
+    return false;
   }
 }

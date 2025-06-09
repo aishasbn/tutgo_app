@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/route_helper.dart';
 
 class AccountTypeScreen extends StatefulWidget {
@@ -10,6 +11,16 @@ class AccountTypeScreen extends StatefulWidget {
 
 class _AccountTypeScreenState extends State<AccountTypeScreen> {
   String selectedType = 'user'; // 'user' or 'staff'
+
+  Future<void> _saveAccountType(String accountType) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('selected_account_type', accountType);
+      print('✅ Account type saved: $accountType');
+    } catch (e) {
+      print('❌ Error saving account type: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +160,10 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    // Save selected account type
+                    await _saveAccountType(selectedType);
+                    
                     if (selectedType == 'staff') {
                       RouteHelper.navigateToStaffLogin(context);
                     } else {

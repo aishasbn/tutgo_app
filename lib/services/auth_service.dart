@@ -38,9 +38,18 @@ class AuthService {
     await _enhancedAuthService.signOut();
   }
 
-  // Check if user is staff
+  // Check if user is staff with better error handling
   Future<bool> isStaff() async {
-    return await _enhancedAuthService.isStaff();
+    try {
+      print('🔍 AuthService: Checking if user is staff...');
+      final result = await _enhancedAuthService.isStaff();
+      print('✅ AuthService: Staff check result: $result');
+      return result;
+    } catch (e) {
+      print('❌ AuthService: Error checking staff status: $e');
+      // Return false as default if check fails
+      return false;
+    }
   }
 
   // Get user data
