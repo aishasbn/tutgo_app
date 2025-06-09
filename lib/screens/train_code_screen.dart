@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/warning_box.dart';
-import '../widgets/title_section.dart';
-import '../widgets/train_code_input_form.dart';
-import '../services/train_service.dart';
-import '../utils/route_helper.dart';
+import '../../widgets/warning_box.dart';
+import '../../widgets/title_section.dart';
+import '../../widgets/train_code_input_form.dart';
+import '../../services/train_service.dart';
+import '../../utils/route_helper.dart';
 
 class TrainCodeScreen extends StatefulWidget {
   const TrainCodeScreen({super.key});

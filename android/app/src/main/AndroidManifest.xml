@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Location permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+     
+    <!-- Internet permission -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -8,6 +16,11 @@
         android:label="tutgo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+         <!-- Google Maps API Key -->
+        <meta-data 
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDUqllpoPvISz4JLl32741ZQuUvf__Pn4k"/>
         
 
         <activity
