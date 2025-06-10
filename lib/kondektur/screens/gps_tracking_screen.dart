@@ -7,11 +7,15 @@ import '../models/route_models.dart';
 
 class GPSTrackingScreen extends StatefulWidget {
   final String routeCode;
+  final String conductorName;
+  final String conductorId;
 
   const GPSTrackingScreen({
-    super.key,
+    Key? key,
     required this.routeCode,
-  });
+    required this.conductorName,
+    required this.conductorId,
+  }) : super(key: key);
 
   @override
   State<GPSTrackingScreen> createState() => _GPSTrackingScreenState();
@@ -20,141 +24,292 @@ class GPSTrackingScreen extends StatefulWidget {
 class _GPSTrackingScreenState extends State<GPSTrackingScreen> {
   GoogleMapController? _mapController;
   StreamSubscription<Position>? _positionSubscription;
-  StreamSubscription<StationDetectionEvent>? _stationDetectionSubscription;
+  StreamSubscription<StationDetectionEvent>? _stationSubscription;
   
   RouteData? _routeData;
-  RouteProgress? _routeProgress;
   Position? _currentPosition;
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   bool _isTracking = false;
   String _trackingStatus = 'Initializing...';
+  int _passedStations = 0;
+  int _totalStations = 0;
+  String _currentStationName = '';
+  String _nextStationName = '';
   
-  // Camera position for PENS area
-  static const CameraPosition _initialCameraPosition = CameraPosition(
-    target: LatLng(-7.280, 112.800), // Center of the route area
-    zoom: 15.0,
-  );
-
+  // For UI updates
+  Timer? _uiUpdateTimer;
+  
   @override
   void initState() {
     super.initState();
+    print('🎯 GPSTrackingScreen initialized');
+    print('🚂 Route: ${widget.routeCode}');
+    print('👤 Conductor: ${widget.conductorName} (${widget.conductorId})');
     _initializeTracking();
   }
 
   Future<void> _initializeTracking() async {
+    print('🚀 Initializing GPS tracking...');
+    
     setState(() {
       _trackingStatus = 'Loading route data...';
     });
 
-    // Get route details
-    final routeDetailsResult = EnhancedRouteService.getRouteDetails(widget.routeCode);
-    if (routeDetailsResult.success) {
-      setState(() {
-        _routeData = routeDetailsResult.routeData;
-        _trackingStatus = 'Starting GPS tracking...';
-      });
-
-      // Start GPS tracking
-      final trackingResult = await EnhancedRouteService.startConductorTracking(widget.routeCode);
+    try {
+      // Get route details
+      final routeDetailsResult = EnhancedRouteService.getRouteDetails(widget.routeCode);
+      print('📋 Route details result: ${routeDetailsResult.success}');
       
-      if (trackingResult.success) {
+      if (routeDetailsResult.success) {
         setState(() {
-          _isTracking = true;
-          _trackingStatus = 'GPS tracking active';
+          _routeData = routeDetailsResult.routeData;
+          _totalStations = _routeData!.stations.length;
+          _trackingStatus = 'Starting GPS tracking...';
         });
 
-        // Listen to position updates
-        _positionSubscription = EnhancedRouteService.positionStream.listen((position) {
+        print('📍 Route has ${_totalStations} stations');
+
+        // Start tracking
+        final trackingResult = await EnhancedRouteService.startConductorTracking(widget.routeCode);
+        print('🎯 Tracking start result: ${trackingResult.success} - ${trackingResult.message}');
+        
+        if (trackingResult.success) {
           setState(() {
-            _currentPosition = position;
-            _updateMapMarkers();
-            _updateRouteProgress();
+            _isTracking = true;
+            _trackingStatus = 'GPS tracking active';
+          });
+
+          // Listen to position updates with more robust handling
+          _positionSubscription = EnhancedRouteService.positionStream.listen(
+            (position) {
+              print('📱 UI received position update: ${position.latitude}, ${position.longitude}');
+              if (mounted) {
+                setState(() {
+                  _currentPosition = position;
+                  _updateMapMarkers();
+                  _updateRouteProgress(); // Update progress on each position change
+                });
+                
+                // Force camera update on significant position changes
+                if (_mapController != null) {
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLngZoom(
+                      LatLng(position.latitude, position.longitude),
+                      16.0,
+                    ),
+                  );
+                }
+              }
+            },
+            onError: (error) {
+              print('❌ Position stream error: $error');
+              // Try to recover from errors
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('GPS error: $error'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+          );
+
+          // Listen to station detection events
+          _stationSubscription = EnhancedRouteService.stationDetectionStream.listen((event) {
+            print('📱 UI received station event: ${event.eventType} - ${event.stationName}');
+            if (mounted) {
+              _handleStationEvent(event);
+            }
+          });
+
+          // Start UI update timer
+          _uiUpdateTimer = Timer.periodic(Duration(seconds: 2), (timer) {
+            if (mounted) {
+              _updateRouteProgress();
+            }
+          });
+
+          _updateMapMarkers();
+          _updateRouteProgress();
+
+          // Start periodic position refresh
+          _startPeriodicPositionRefresh();
+          
+        } else {
+          setState(() {
+            _trackingStatus = 'Failed to start GPS tracking: ${trackingResult.message}';
           });
           
-          // Move camera to current position
-          if (_mapController != null) {
-            _mapController!.animateCamera(
-              CameraUpdate.newLatLng(
-                LatLng(position.latitude, position.longitude),
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to start tracking: ${trackingResult.message}'),
+                backgroundColor: Colors.red,
               ),
             );
           }
-        });
-
-        // Listen to station detection events
-        _stationDetectionSubscription = EnhancedRouteService.stationDetectionStream.listen((event) {
-          _handleStationDetectionEvent(event);
-        });
-
-        _updateMapMarkers();
-        _updateRouteProgress();
+        }
       } else {
         setState(() {
-          _trackingStatus = 'Failed to start GPS: ${trackingResult.message}';
+          _trackingStatus = 'Route not found';
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(trackingResult.message),
-            backgroundColor: Colors.red,
-          ),
-        );
+        print('❌ Route not found: ${widget.routeCode}');
       }
-    } else {
+    } catch (e) {
+      print('❌ Error initializing tracking: $e');
       setState(() {
-        _trackingStatus = 'Route not found';
+        _trackingStatus = 'Error: $e';
       });
     }
   }
 
-  void _updateMapMarkers() {
-    setState(() {
-      _markers.clear();
-      
-      // Add route station markers
-      _markers.addAll(EnhancedRouteService.getRouteMarkers(widget.routeCode));
-      
-      // Add conductor marker
-      final conductorMarker = EnhancedRouteService.getConductorMarker();
-      if (conductorMarker != null) {
-        _markers.add(conductorMarker);
+  // Force position refresh periodically
+void _startPeriodicPositionRefresh() {
+  Timer.periodic(Duration(seconds: 10), (timer) {
+    if (!mounted || !_isTracking) {
+      timer.cancel();
+      return;
+    }
+    
+    print('🔄 Forcing position refresh');
+    // Use getCurrentPosition instead of requestPositionUpdate
+    Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+      forceAndroidLocationManager: true,
+    ).then((position) {
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _updateMapMarkers();
+          _updateRouteProgress();
+        });
       }
-      
-      // Add route polyline
-      _polylines.clear();
-      final routePolyline = EnhancedRouteService.getRoutePolyline(widget.routeCode);
-      if (routePolyline != null) {
-        _polylines.add(routePolyline);
-      }
+    }).catchError((error) {
+      print('⚠️ Forced position refresh error: $error');
     });
+  });
+}
+
+  void _updateMapMarkers() {
+    if (!mounted) return;
+  
+    print('🗺️ Updating map markers');
+  
+    try {
+      setState(() {
+        _markers.clear();
+        
+        // Add route station markers
+        if (_routeData != null) {
+          int validStations = 0;
+          for (final station in _routeData!.stations) {
+            if (station.latitude != null && station.longitude != null) {
+              validStations++;
+              _markers.add(
+                Marker(
+                  markerId: MarkerId(station.id),
+                  position: LatLng(station.latitude!, station.longitude!),
+                  infoWindow: InfoWindow(
+                    title: station.name,
+                    snippet: station.isPassed ? 'Passed ✅' : 'Upcoming 📍',
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                    station.isPassed 
+                        ? BitmapDescriptor.hueGreen 
+                        : BitmapDescriptor.hueRed,
+                  ),
+                ),
+              );
+            }
+          }
+          print('🗺️ Added $validStations station markers');
+        }
+        
+        // Add conductor marker
+        if (_currentPosition != null) {
+          _markers.add(
+            Marker(
+              markerId: MarkerId('conductor'),
+              position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+              infoWindow: InfoWindow(
+                title: '🚂 ${widget.conductorName}',
+                snippet: 'Last updated: ${DateTime.now().toString().substring(11, 19)}',
+              ),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+              zIndex: 2,
+            ),
+          );
+          print('🗺️ Added conductor marker at ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
+          
+          // Move camera to current position if available
+          if (_mapController != null) {
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                16.0,
+              ),
+            );
+          }
+        } else {
+          print('⚠️ No current position available for conductor marker');
+        }
+        
+        // Add route polyline
+        if (_routeData != null) {
+          final polyline = EnhancedRouteService.getRoutePolyline(widget.routeCode);
+          if (polyline != null) {
+            _polylines.clear();
+            _polylines.add(polyline);
+            print('🗺️ Added route polyline');
+          } else {
+            print('⚠️ No polyline available for route ${widget.routeCode}');
+          }
+        }
+      });
+    } catch (e) {
+      print('❌ Error updating map markers: $e');
+    }
   }
 
   void _updateRouteProgress() {
+    if (!mounted || _routeData == null) return;
+    
+    final progress = EnhancedRouteService.getRouteProgress(widget.routeCode);
+    
     setState(() {
-      _routeProgress = EnhancedRouteService.getRouteProgress(widget.routeCode);
+      _passedStations = progress.passedStations;
+      _currentStationName = progress.currentStation?.name ?? 'Starting Point';
+      _nextStationName = progress.nextStation?.name ?? 'Route Completed';
     });
   }
 
-  void _handleStationDetectionEvent(StationDetectionEvent event) {
+  void _handleStationEvent(StationDetectionEvent event) {
+    if (!mounted) return;
+    
     String message = '';
     Color backgroundColor = Colors.blue;
     
     switch (event.eventType) {
       case StationEventType.approaching:
         message = 'Approaching ${event.stationName}';
-        backgroundColor = Colors.orange;
+        backgroundColor = Colors.blue;
         break;
       case StationEventType.arrived:
-        message = '✅ Arrived at ${event.stationName}';
+        message = 'Arrived at ${event.stationName}';
         backgroundColor = Colors.green;
+        setState(() {
+          _passedStations++;
+        });
         break;
       case StationEventType.departed:
         message = 'Departed from ${event.stationName}';
-        backgroundColor = Colors.blue;
+        backgroundColor = Colors.orange;
         break;
       case StationEventType.routeCompleted:
-        message = '🎉 Route completed at ${event.stationName}!';
+        message = 'Route completed!';
         backgroundColor = Colors.purple;
         break;
     }
@@ -167,46 +322,59 @@ class _GPSTrackingScreenState extends State<GPSTrackingScreen> {
       ),
     );
     
+    _updateMapMarkers();
     _updateRouteProgress();
   }
 
-  void _stopTracking() {
-    EnhancedRouteService.stopTracking();
-    setState(() {
-      _isTracking = false;
-      _trackingStatus = 'Tracking stopped';
-    });
-    Navigator.pop(context);
+  void _stopTracking() async {
+    print('🛑 Stopping GPS tracking...');
+    
+    try {
+      await EnhancedRouteService.stopTracking();
+      setState(() {
+        _isTracking = false;
+        _trackingStatus = 'GPS tracking stopped';
+      });
+      
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('❌ Error stopping tracking: $e');
+    }
   }
 
   @override
   void dispose() {
+    print('🗑️ Disposing GPSTrackingScreen');
     _positionSubscription?.cancel();
-    _stationDetectionSubscription?.cancel();
+    _stationSubscription?.cancel();
+    _uiUpdateTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFF5EE),
       appBar: AppBar(
-        backgroundColor: Color(0xFFD75A9E),
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          'GPS Tracking - ${widget.routeCode}',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
+        title: Text('GPS Tracking - ${widget.routeCode}'),
+        backgroundColor: const Color(0xFFD75A9E),
+        foregroundColor: Colors.white,
         actions: [
+          // GPS Debug button
+          IconButton(
+            icon: Icon(Icons.gps_fixed),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => GPSDebugDialog(),
+              );
+            },
+            tooltip: 'GPS Debug',
+          ),
           if (_isTracking)
             IconButton(
-              icon: Icon(Icons.stop, color: Colors.white),
+              icon: Icon(Icons.stop),
               onPressed: _stopTracking,
               tooltip: 'Stop Tracking',
             ),
@@ -214,316 +382,177 @@ class _GPSTrackingScreenState extends State<GPSTrackingScreen> {
       ),
       body: Column(
         children: [
-          // Status Header
+          // Status Panel
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Color(0xFFD75A9E),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
+            color: _isTracking ? Colors.green.shade50 : Colors.red.shade50,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Route Info
-                if (_routeData != null) ...[
-                  Text(
-                    _routeData!.routeName,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    _routeData!.description,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                ],
-                
-                // Status Row
                 Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isTracking ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isTracking ? Icons.gps_fixed : Icons.gps_off,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            _trackingStatus,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                    Icon(
+                      _isTracking ? Icons.gps_fixed : Icons.gps_off,
+                      color: _isTracking ? Colors.green : Colors.red,
                     ),
-                    Spacer(),
-                    if (_currentPosition != null)
-                      Text(
-                        'GPS: ${_currentPosition!.latitude.toStringAsFixed(6)}, ${_currentPosition!.longitude.toStringAsFixed(6)}',
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _trackingStatus,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
+                    if (_isTracking)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.wifi, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'LIVE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                
+                SizedBox(height: 8),
+                
+                // Conductor info
+                Text(
+                  'Kondektur: ${widget.conductorName} (${widget.conductorId})',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                
+                if (_currentPosition != null) ...[
+                  SizedBox(height: 4),
+                  Text(
+                    'GPS: ${_currentPosition!.latitude.toStringAsFixed(6)}, ${_currentPosition!.longitude.toStringAsFixed(6)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Accuracy: ${_currentPosition!.accuracy.toStringAsFixed(1)}m • Updated: ${DateTime.fromMillisecondsSinceEpoch(_currentPosition!.timestamp.millisecondsSinceEpoch).toString().substring(11, 19)}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+                
+                SizedBox(height: 8),
+                
+                // Progress bar
+                LinearProgressIndicator(
+                  value: _totalStations > 0 ? _passedStations / _totalStations : 0,
+                  backgroundColor: Colors.grey.shade300,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _isTracking ? Colors.green : Colors.red,
+                  ),
+                ),
+                
+                SizedBox(height: 8),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Progress: $_passedStations/$_totalStations stations',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Text(
+                      'Next: $_nextStationName',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          
-          // Progress Bar
-          if (_routeProgress != null) ...[
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Route Progress',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        '${_routeProgress!.passedStations}/${_routeProgress!.totalStations} stations',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: _routeProgress!.progressPercentage,
-                    backgroundColor: Colors.grey.shade300,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD75A9E)),
-                    minHeight: 6,
-                  ),
-                  SizedBox(height: 12),
-                  
-                  // Current and Next Station Info
-                  Row(
-                    children: [
-                      // Current Station
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green.shade200),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Current',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                _routeProgress!.currentStation?.name ?? 'Not started',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      
-                      // Next Station
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Next',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                _routeProgress!.nextStation?.name ?? 'Route completed',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
           
           // Google Map
           Expanded(
-            child: Container(
-              margin: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(-7.280, 112.800), // Default position (Surabaya)
+                zoom: 14.0,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: GoogleMap(
-                  initialCameraPosition: _initialCameraPosition,
-                  onMapCreated: (GoogleMapController controller) {
-                    _mapController = controller;
-                  },
-                  markers: _markers,
-                  polylines: _polylines,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                  zoomControlsEnabled: true,
-                  mapToolbarEnabled: false,
-                  compassEnabled: true,
-                  trafficEnabled: false,
-                  buildingsEnabled: true,
-                  mapType: MapType.normal,
-                ),
-              ),
-            ),
-          ),
-          
-          // Bottom Info Panel
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text(
-                      'Automatic Detection Settings',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+              onMapCreated: (GoogleMapController controller) {
+                print('🗺️ Google Map created');
+                _mapController = controller;
+                
+                // If we already have a position, move camera there
+                if (_currentPosition != null) {
+                  controller.animateCamera(
+                    CameraUpdate.newLatLngZoom(
+                      LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                      16.0,
                     ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          'Detection Radius',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          '50m',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text(
-                          'Dwell Time',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          '3 seconds',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text(
-                          'GPS Accuracy',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                        Text(
-                          'High',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                  );
+                }
+              },
+              markers: _markers,
+              polylines: _polylines,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              zoomControlsEnabled: true,
+              compassEnabled: true,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class GPSDebugDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('GPS Debug Information'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('This dialog is a placeholder for GPS debug information.'),
+          Text('You can add more detailed information here, such as:'),
+          SizedBox(height: 8),
+          Text('- GPS status (enabled/disabled)'),
+          Text('- Last known location'),
+          Text('- Accuracy of the location'),
+          Text('- Time since last update'),
+          Text('- Permissions status'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Close'),
+        ),
+      ],
     );
   }
 }

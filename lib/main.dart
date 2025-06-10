@@ -59,20 +59,45 @@ class TutGoApp extends StatelessWidget {
         
         // Conductor routes
         '/conductor-home': (context) => const ConductorHomeScreen(),
-        '/conductor-enter-code': (context) => const EnhancedEnterCodeScreen(),
         '/conductor-profile': (context) => const ProfileScreen(),
       },
       onGenerateRoute: (settings) {
-        // Handle conductor tracking route with parameters
-        if (settings.name == '/conductor-tracking') {
-          final routeCode = settings.arguments as String;
+        print('🔄 Generating route for: ${settings.name}');
+        print('📦 Arguments: ${settings.arguments}');
+        
+        // Handle conductor enter code route with parameters
+        if (settings.name == '/conductor-enter-code') {
+          final args = settings.arguments as Map<String, String>?;
+          print('🎯 Navigating to EnhancedEnterCodeScreen with args: $args');
+          
           return MaterialPageRoute(
-            builder: (context) => GPSTrackingScreen(routeCode: routeCode),
+            builder: (context) => EnhancedEnterCodeScreen(
+              conductorName: args?['conductorName'] ?? 'Unknown Conductor',
+              conductorId: args?['conductorId'] ?? 'unknown_id',
+            ),
+            settings: settings,
           );
         }
+        
+        // Handle conductor tracking route with parameters
+        if (settings.name == '/conductor-tracking') {
+          final args = settings.arguments as Map<String, String>?;
+          print('🎯 Navigating to GPSTrackingScreen with args: $args');
+          
+          return MaterialPageRoute(
+            builder: (context) => GPSTrackingScreen(
+              routeCode: args?['routeCode'] ?? '',
+              conductorName: args?['conductorName'] ?? 'Unknown Conductor',
+              conductorId: args?['conductorId'] ?? 'unknown_id',
+            ),
+            settings: settings,
+          );
+        }
+        
         return null;
       },
       onUnknownRoute: (settings) {
+        print('❌ Unknown route: ${settings.name}');
         return MaterialPageRoute(
           builder: (context) => const AuthWrapper(),
         );

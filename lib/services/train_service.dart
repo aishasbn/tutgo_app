@@ -27,6 +27,160 @@ class TrainService {
   Timer? _finishTimer;
   bool _isDisposed = false;
 
+  // Static variables for Firebase subscriptions
+  static StreamSubscription<QuerySnapshot>? _activeRoutesSubscription;
+  static StreamSubscription<DocumentSnapshot>? _specificRouteSubscription;
+
+  // Start listening to real-time updates from Firebase
+  void startRealtimeUpdates() {
+    print('🎧 Starting real-time updates from Firebase');
+    
+    _activeRoutesSubscription = _firestore
+        .collection('active_routes')
+        .where('status', isEqualTo: 'active')
+        .snapshots()
+        .listen((snapshot) {
+      
+      List<Kereta> realtimeTrains = [];
+      
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          final kereta = _convertFirestoreToKereta(data);
+          if (kereta != null) {
+            realtimeTrains.add(kereta);
+          }
+        } catch (e) {
+          print('❌ Error converting Firebase data: $e');
+        }
+      }
+      
+      // Update active trains with real-time data
+      _safeAddToStream(_activeTrainsController, realtimeTrains);
+      print('📡 Real-time trains updated: ${realtimeTrains.length}');
+    });
+  }
+
+  // Listen to specific train updates
+  void listenToSpecificTrain(String routeCode) {
+    _specificRouteSubscription?.cancel();
+    
+    _specificRouteSubscription = _firestore
+        .collection('active_routes')
+        .doc(routeCode)
+        .snapshots()
+        .listen((snapshot) {
+      
+      if (snapshot.exists && _currentActiveTrip?.kode == routeCode) {
+        try {
+          final data = snapshot.data() as Map<String, dynamic>;
+          final updatedKereta = _convertFirestoreToKereta(data);
+          
+          if (updatedKereta != null) {
+            _currentActiveTrip = updatedKereta;
+            _safeAddToStream(_activeTripController, _currentActiveTrip);
+            
+            // Emit train update
+            _safeAddToStream(_trainUpdateController, {
+              'type': 'realtime_update',
+              'routeCode': routeCode,
+              'data': data,
+              'timestamp': DateTime.now().toIso8601String(),
+            });
+          }
+        } catch (e) {
+          print('❌ Error processing specific train update: $e');
+        }
+      }
+    });
+  }
+
+  // Convert Firebase data to Kereta model
+  Kereta? _convertFirestoreToKereta(Map<String, dynamic> data) {
+    try {
+      final stations = List<Map<String, dynamic>>.from(data['stations'] ?? []);
+      final currentStationIndex = data['currentStationIndex'] as int? ?? 0;
+      
+      // Convert stations to route
+      List<StasiunRoute> route = stations.map((station) {
+        final isPassed = station['isPassed'] as bool? ?? false;
+        final stationIndex = stations.indexOf(station);
+        final isActive = stationIndex == currentStationIndex && !isPassed;
+        
+        return StasiunRoute(
+          nama: station['name'] as String? ?? '',
+          waktu: station['estimatedTime'] as String? ?? '',
+          isPassed: isPassed,
+          isActive: isActive,
+        );
+      }).toList();
+
+      // Determine status
+      KeretaStatus status = KeretaStatus.willArrive;
+      final statusStr = data['status'] as String? ?? 'pending';
+      switch (statusStr) {
+        case 'active':
+          status = currentStationIndex > 0 ? KeretaStatus.onRoute : KeretaStatus.willArrive;
+          break;
+        case 'completed':
+          status = KeretaStatus.finished;
+          break;
+        default:
+          status = KeretaStatus.willArrive;
+      }
+
+      // Calculate arrival countdown
+      String? arrivalCountdown = _calculateRealtimeCountdown(data, currentStationIndex, stations);
+
+      return Kereta(
+        kode: data['routeCode'] as String? ?? '',
+        nama: data['routeName'] as String? ?? '',
+        fromStasiun: stations.isNotEmpty ? stations.first['name'] as String? ?? '' : '',
+        toStasiun: stations.isNotEmpty ? stations.last['name'] as String? ?? '' : '',
+        jadwal: _formatRealtimeSchedule(data),
+        status: status,
+        arrivalCountdown: arrivalCountdown,
+        route: route,
+        gerbongs: _generateDefaultGerbongs(),
+      );
+    } catch (e) {
+      print('❌ Error converting Firebase to Kereta: $e');
+      return null;
+    }
+  }
+
+  String? _calculateRealtimeCountdown(
+    Map<String, dynamic> data, 
+    int currentStationIndex, 
+    List<Map<String, dynamic>> stations
+  ) {
+    try {
+      final remainingStations = stations.length - currentStationIndex;
+      if (remainingStations <= 0) return 'Arrived';
+      
+      final estimatedMinutes = remainingStations * 5; // 5 minutes per station
+      return estimatedMinutes <= 10 ? '$estimatedMinutes menit' : '${(estimatedMinutes / 60).ceil()} jam';
+    } catch (e) {
+      return '5-10 menit';
+    }
+  }
+
+  String _formatRealtimeSchedule(Map<String, dynamic> data) {
+    try {
+      // Use existing schedule format or create from timestamps
+      return '06:30-08:30'; // Default for now
+    } catch (e) {
+      return '06:30-08:30';
+    }
+  }
+
+  List<Gerbong> _generateDefaultGerbongs() {
+    return [
+      Gerbong(kode: 'A', tipe: 'Eksekutif', kapasitas: 50, terisi: 35),
+      Gerbong(kode: 'B', tipe: 'Ekonomi', kapasitas: 80, terisi: 65),
+    ];
+  }
+
   // Singleton pattern
   static TrainService? _instance;
   static TrainService get instance {
@@ -96,6 +250,9 @@ class TrainService {
       // Set as active trip
       _currentActiveTrip = kereta;
       _safeAddToStream(_activeTripController, kereta);
+
+      startRealtimeUpdates();
+      listenToSpecificTrain(code);
       
       // Start finish timer for testing (1 minute)
       _startFinishTimer();
@@ -217,8 +374,24 @@ class TrainService {
   }
 
   // Get route progress from conductor
-  RouteProgress getRouteProgress(String code) {
-    return EnhancedRouteService.getRouteProgress(code);
+  Map<String, dynamic> getRouteProgress(String code) {
+    try {
+      final progress = EnhancedRouteService.getRouteProgress(code);
+      return {
+        'passedStations': progress.passedStations,
+        'totalStations': progress.totalStations,
+        'currentStation': progress.currentStation?.toMap(),
+        'nextStation': progress.nextStation?.toMap(),
+      };
+    } catch (e) {
+      print('❌ Error getting route progress: $e');
+      return {
+        'passedStations': 0,
+        'totalStations': 0,
+        'currentStation': null,
+        'nextStation': null,
+      };
+    }
   }
 
   // Check if conductor is tracking this route
@@ -368,11 +541,11 @@ class TrainService {
   // Get next station for notification
   Map<String, dynamic>? getNextStation(String code) {
     final progress = getRouteProgress(code);
-    if (progress.nextStation != null) {
+    if (progress['nextStation'] != null) {
       return {
-        'name': progress.nextStation!.name,
-        'time': progress.nextStation!.estimatedArrivalTime ?? 
-                progress.nextStation!.estimatedDepartureTime ?? '',
+        'name': progress['nextStation']['name'],
+        'time': progress['nextStation']['estimatedArrivalTime'] ??
+                progress['nextStation']['estimatedDepartureTime'] ?? '',
       };
     }
     return null;
@@ -399,6 +572,9 @@ class TrainService {
     
     _isDisposed = true;
     _finishTimer?.cancel();
+
+    _activeRoutesSubscription?.cancel();
+    _specificRouteSubscription?.cancel();
     
     if (!_activeTrainsController.isClosed) {
       _activeTrainsController.close();

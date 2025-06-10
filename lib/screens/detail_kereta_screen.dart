@@ -7,9 +7,13 @@ import '../../widgets/route_timeline.dart';
 import '../../widgets/carriage_information.dart';
 import '../../widgets/finish_button.dart';
 import '../services/train_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 
 class DetailKeretaScreen extends StatefulWidget {
-  const DetailKeretaScreen({super.key});
+  final String? routeCode;
+  
+  const DetailKeretaScreen({super.key, this.routeCode});
 
   @override
   _DetailKeretaScreenState createState() => _DetailKeretaScreenState();
@@ -35,6 +39,10 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
   int? userSeatNumber;
   bool hasConfirmedSeat = false;
   bool showFinishButton = false;
+
+  StreamSubscription<DocumentSnapshot>? _realtimeSubscription;
+  bool _isTrainLive = false;
+  Map<String, dynamic> _realtimeData = {};
 
   @override
   void initState() {
@@ -69,6 +77,11 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Kereta?;
     kereta = args ?? _getDummyData();
+    
+    // Start real-time listening if we have a route code
+    if (widget.routeCode != null || kereta.kode.isNotEmpty) {
+      _startRealtimeListening();
+    }
   }
 
   @override
@@ -273,5 +286,36 @@ class _DetailKeretaScreenState extends State<DetailKeretaScreen> {
       ],
       gerbongs: const [],
     );
+  }
+
+  void _startRealtimeListening() {
+    final routeCode = widget.routeCode ?? kereta.kode;
+    if (routeCode.isEmpty) return;
+    
+    print('🎧 Starting real-time listening for: $routeCode');
+    
+    _realtimeSubscription = FirebaseFirestore.instance
+        .collection('active_routes')
+        .doc(routeCode)
+        .snapshots()
+        .listen((snapshot) {
+      
+      if (snapshot.exists && mounted) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        
+        setState(() {
+          _realtimeData = data;
+          _isTrainLive = data['status'] == 'active';
+        });
+        
+        print('📡 Real-time update received for $routeCode');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _realtimeSubscription?.cancel();
+    super.dispose();
   }
 }

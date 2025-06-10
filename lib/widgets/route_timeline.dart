@@ -11,8 +11,13 @@ enum StationStatus {
 
 class RouteTimeline extends StatelessWidget {
   final List<StasiunRoute> route;
+  final bool isLive;
 
-  const RouteTimeline({super.key, required this.route});
+  const RouteTimeline({
+    super.key,
+    required this.route,
+    this.isLive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +51,50 @@ class RouteTimeline extends StatelessWidget {
             color: Colors.black,
           ),
         ),
-        Text(
-          'Swipe →',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[500],
-            fontStyle: FontStyle.italic,
-          ),
+        Row(
+          children: [
+            if (isLive) ...[
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'LIVE',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+            ],
+            Text(
+              'Swipe →',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -96,7 +138,7 @@ class RouteTimeline extends StatelessWidget {
   Widget _buildActiveTimelineLine() {
     // Calculate how much of the timeline should be active based on passed stations
     int passedCount = route.where((station) => station.isPassed).length;
-    
+
     return Positioned(
       top: 10,
       left: 50,
@@ -106,7 +148,9 @@ class RouteTimeline extends StatelessWidget {
             Container(
               width: 100,
               height: 2,
-              color: i < passedCount ? Color(0xFFE91E63) : Colors.grey[300],
+              color: i < passedCount
+                  ? (isLive ? Color(0xFFD75A9E) : Color(0xFFE91E63))
+                  : Colors.grey[300],
             ),
           ],
         ],
@@ -149,7 +193,7 @@ class RouteTimeline extends StatelessWidget {
   Widget _buildStationItem(String name, String subtitle, String time, StationStatus status) {
     Widget icon;
     Color textColor;
-    
+
     switch (status) {
       case StationStatus.start:
         icon = Container(

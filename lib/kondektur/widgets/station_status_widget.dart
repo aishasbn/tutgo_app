@@ -7,6 +7,11 @@ class StationStatusWidget extends StatelessWidget {
   final String? arrivalTime;
   final String? departureTime;
   final DateTime? actualArrivalTime;
+  
+  // Added these for backward compatibility
+  final String? currentStation;
+  final String? nextStation;
+  final bool? isActive;
 
   const StationStatusWidget({
     super.key,
@@ -16,10 +21,18 @@ class StationStatusWidget extends StatelessWidget {
     this.arrivalTime,
     this.departureTime,
     this.actualArrivalTime,
+    // Optional backward compatibility parameters
+    this.currentStation,
+    this.nextStation,
+    this.isActive,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Use currentStation if stationName is not provided (for backward compatibility)
+    final displayName = currentStation ?? stationName;
+    final isActiveStatus = isActive ?? isCurrent;
+    
     return Row(
       children: [
         // Status Indicator
@@ -30,13 +43,13 @@ class StationStatusWidget extends StatelessWidget {
             shape: BoxShape.circle,
             color: isPassed
                 ? Color(0xFF4CAF50)
-                : isCurrent
+                : isActiveStatus
                     ? Color(0xFFD75A9E)
                     : Colors.grey.shade300,
             border: Border.all(
               color: isPassed
                   ? Color(0xFF4CAF50)
-                  : isCurrent
+                  : isActiveStatus
                       ? Color(0xFFD75A9E)
                       : Colors.grey.shade400,
               width: 2,
@@ -48,7 +61,7 @@ class StationStatusWidget extends StatelessWidget {
                   color: Colors.white,
                   size: 16,
                 )
-              : isCurrent
+              : isActiveStatus
                   ? Container(
                       margin: EdgeInsets.all(6),
                       decoration: BoxDecoration(
@@ -68,14 +81,14 @@ class StationStatusWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: isPassed
                   ? Color(0xFFE8F5E9)
-                  : isCurrent
+                  : isActiveStatus
                       ? Color(0xFFF8D7E6)
                       : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isPassed
                     ? Color(0xFF4CAF50).withOpacity(0.3)
-                    : isCurrent
+                    : isActiveStatus
                         ? Color(0xFFD75A9E).withOpacity(0.3)
                         : Colors.grey.shade300,
                 width: 1,
@@ -88,19 +101,19 @@ class StationStatusWidget extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        stationName,
+                        displayName,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: isPassed
                               ? Color(0xFF4CAF50)
-                              : isCurrent
+                              : isActiveStatus
                                   ? Color(0xFFD75A9E)
                                   : Colors.black87,
                         ),
                       ),
                     ),
-                    if (isCurrent)
+                    if (isActiveStatus)
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -108,7 +121,7 @@ class StationStatusWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          'NEXT',
+                          'CURRENT',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -135,44 +148,67 @@ class StationStatusWidget extends StatelessWidget {
                   ],
                 ),
                 
-                const SizedBox(height: 8),
+                // Next station info if available
+                if (nextStation != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: Colors.black54,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Next: $nextStation',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 
                 // Time Information
-                Row(
-                  children: [
-                    if (arrivalTime != null) ...[
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Arrival: $arrivalTime',
-                        style: TextStyle(
-                          fontSize: 12,
+                if (arrivalTime != null || departureTime != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (arrivalTime != null) ...[
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
                           color: Colors.black54,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    if (departureTime != null) ...[
-                      Icon(
-                        Icons.departure_board,
-                        size: 14,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Departure: $departureTime',
-                        style: TextStyle(
-                          fontSize: 12,
+                        const SizedBox(width: 4),
+                        Text(
+                          'Arrival: $arrivalTime',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (departureTime != null) ...[
+                        Icon(
+                          Icons.departure_board,
+                          size: 14,
                           color: Colors.black54,
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Departure: $departureTime',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+                ],
                 
                 // Actual arrival time if available
                 if (actualArrivalTime != null) ...[

@@ -38,16 +38,73 @@ class AuthService {
     await _enhancedAuthService.signOut();
   }
 
-  // Check if user is staff with better error handling
+  // Check if user is staff with better error handling and multiple checks
   Future<bool> isStaff() async {
     try {
       print('🔍 AuthService: Checking if user is staff...');
+      
+      // First check with enhanced service
       final result = await _enhancedAuthService.isStaff();
-      print('✅ AuthService: Staff check result: $result');
-      return result;
+      print('✅ AuthService: Staff check result from enhanced service: $result');
+      
+      if (result) {
+        return true;
+      }
+      
+      // If that fails, check email pattern directly
+      final user = currentUser;
+      if (user != null) {
+        final email = user.email ?? '';
+        
+        // Check email patterns that indicate staff
+        if (email.contains('@staff.tutgo.com') || 
+            email.contains('staff') || 
+            email.contains('conductor') || 
+            email.contains('kondektur')) {
+          print('✅ AuthService: Email pattern indicates staff: $email');
+          return true;
+        }
+        
+        // Check if email starts with numeric ID (likely staff ID)
+        if (email.contains('@') && 
+            email.split('@')[0].length >= 6 && 
+            int.tryParse(email.split('@')[0]) != null) {
+          print('✅ AuthService: Email format matches staff ID pattern: $email');
+          return true;
+        }
+        
+        // Get user data as final check
+        try {
+          final userData = await getUserData();
+          if (userData != null) {
+            final userType = userData['userType'] ?? '';
+            final role = userData['role'] ?? '';
+            
+            if (userType == 'staff' || role == 'staff' || 
+                role == 'conductor' || role == 'kondektur') {
+              print('✅ AuthService: User data indicates staff role: $userType/$role');
+              return true;
+            }
+          }
+        } catch (e) {
+          print('⚠️ AuthService: Error checking user data for staff role: $e');
+        }
+      }
+      
+      return false;
     } catch (e) {
       print('❌ AuthService: Error checking staff status: $e');
-      // Return false as default if check fails
+      
+      // Last resort check - if error but email pattern matches staff
+      try {
+        final user = currentUser;
+        if (user != null && (user.email?.contains('@staff.tutgo.com') ?? false)) {
+          print('✅ AuthService: Despite error, email indicates staff');
+          return true;
+        }
+      } catch (_) {}
+      
+      // Return false as default if all checks fail
       return false;
     }
   }

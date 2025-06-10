@@ -1,4 +1,3 @@
-// lib/widgets/code_input_widget.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,7 +9,7 @@ class CodeInputWidget extends StatefulWidget {
 
   const CodeInputWidget({
     super.key,
-    this.codeLength = 6,
+    this.codeLength = 5, // Changed to 5 for TG001 format
     required this.onCompleted,
     this.onCodeChanged,
     this.initialValue,
@@ -36,15 +35,19 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
       (index) => FocusNode(),
     );
     
-    // Fill with initial value if provided
-    if (widget.initialValue != null) {
-      final digits = widget.initialValue!.split('');
-      for (int i = 0; i < digits.length && i < widget.codeLength; i++) {
-        _controllers[i].text = digits[i];
-      }
+    // Set initial value if provided
+    if (widget.initialValue != null && widget.initialValue!.isNotEmpty) {
+      _setInitialValue(widget.initialValue!);
     }
   }
-
+  
+  void _setInitialValue(String value) {
+    for (int i = 0; i < widget.codeLength && i < value.length; i++) {
+      _controllers[i].text = value[i];
+    }
+    _checkCompletion();
+  }
+  
   @override
   void dispose() {
     for (var controller in _controllers) {
@@ -55,10 +58,9 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
     }
     super.dispose();
   }
-
+  
   void _onChanged(String value, int index) {
     if (value.isNotEmpty) {
-      // Move to next field
       if (index < widget.codeLength - 1) {
         _focusNodes[index + 1].requestFocus();
       } else {
@@ -66,80 +68,71 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
       }
     }
     
-    // Get current code
-    String currentCode = _controllers.map((c) => c.text).join();
+    _checkCompletion();
+  }
+  
+  void _onBackspace(int index) {
+    if (_controllers[index].text.isEmpty && index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+  }
+  
+  void _checkCompletion() {
+    String code = _controllers.map((controller) => controller.text).join();
     
-    // Call onCodeChanged callback
     if (widget.onCodeChanged != null) {
-      widget.onCodeChanged!(currentCode);
+      widget.onCodeChanged!(code);
     }
     
-    // Check if code is complete
-    if (currentCode.length == widget.codeLength) {
-      widget.onCompleted(currentCode);
+    if (code.length == widget.codeLength) {
+      widget.onCompleted(code);
     }
   }
-
-  void _onKeyEvent(RawKeyEvent event, int index) {
-    if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.backspace) {
-        if (_controllers[index].text.isEmpty && index > 0) {
-          _focusNodes[index - 1].requestFocus();
-        }
-      }
-    }
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        widget.codeLength,
-        (index) => Container(
-          width: 45,
-          height: 45,
-          margin: EdgeInsets.symmetric(horizontal: 5),
-          child: RawKeyboardListener(
-            focusNode: FocusNode(),
-            onKey: (event) => _onKeyEvent(event, index),
-            child: TextField(
-              controller: _controllers[index],
-              focusNode: _focusNodes[index],
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              maxLength: 1,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              decoration: InputDecoration(
-                counterText: '',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: Color(0xFFD75A9E),
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: Color(0xFFD75A9E),
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              onChanged: (value) => _onChanged(value, index),
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(widget.codeLength, (index) {
+        return Container(
+          width: 50,
+          height: 60,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: _focusNodes[index].hasFocus 
+                  ? const Color(0xFFD75A9E)
+                  : Colors.grey.shade300,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            keyboardType: TextInputType.text,
+            textCapitalization: TextCapitalization.characters,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(1),
+              FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+            ],
+            onChanged: (value) => _onChanged(value.toUpperCase(), index),
+            onTap: () {
+              _controllers[index].selection = TextSelection.fromPosition(
+                TextPosition(offset: _controllers[index].text.length),
+              );
+            },
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              counterText: '',
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

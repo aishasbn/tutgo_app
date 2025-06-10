@@ -328,7 +328,7 @@ class EnhancedAuthService {
 
       final userData = await _getUserData(user.uid);
       
-      if (userData != null && userData is Map<String, dynamic>) {
+      if (userData != null) {
         return userData;
       } else {
         print('⚠️ User data format is not as expected: $userData');
@@ -419,7 +419,7 @@ class EnhancedAuthService {
       
       if (doc.exists) {
         final data = doc.data();
-        if (data != null && data is Map<String, dynamic>) {
+        if (data != null) {
           return data;
         } else {
           print('⚠️ Firestore document data is not Map<String, dynamic>: $data');

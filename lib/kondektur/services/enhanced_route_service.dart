@@ -1,14 +1,12 @@
 import 'dart:async';
-//import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-//import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import '../models/route_models.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EnhancedRouteService {
-  //static const String baseUrl = 'https://your-api-domain.com/api';
   static final Map<String, RouteData> _localRoutes = {};
   
   // GPS Tracking
@@ -18,8 +16,8 @@ class EnhancedRouteService {
   static bool _isTracking = false;
   
   // Auto-detection settings
-  static const double STATION_DETECTION_RADIUS = 50.0; // Reduced for testing
-  static const int STATION_DWELL_TIME = 3; // Reduced for testing
+  static const double STATION_DETECTION_RADIUS = 50.0;
+  static const int STATION_DWELL_TIME = 3;
   static final Map<String, DateTime> _stationDwellTimes = {};
   
   // Stream controllers for real-time updates
@@ -38,10 +36,80 @@ class EnhancedRouteService {
   static bool get isTracking => _isTracking;
   static String? get activeRouteCode => _activeRouteCode;
 
-  // Predefined routes - Menggunakan angka saja
+  // Firebase integration
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static Timer? _syncTimer;
+
+  // Real-time sync to Firebase
+  static Future<void> _syncToFirebase() async {
+    if (_activeRouteCode == null || _currentPosition == null) return;
+    
+    try {
+      final routeData = _localRoutes[_activeRouteCode];
+      if (routeData == null) return;
+
+      final routeDoc = {
+        'routeCode': _activeRouteCode,
+        'routeName': routeData.routeName,
+        'description': routeData.description,
+        'conductorName': routeData.conductorName,
+        'conductorId': routeData.conductorId,
+        'status': routeData.status.toString().split('.').last,
+        'lastUpdate': FieldValue.serverTimestamp(),
+        'currentPosition': {
+          'latitude': _currentPosition!.latitude,
+          'longitude': _currentPosition!.longitude,
+          'accuracy': _currentPosition!.accuracy,
+          'timestamp': FieldValue.serverTimestamp(),
+        },
+        'currentStationIndex': _getCurrentStationIndex(),
+        'totalStations': routeData.stations.length,
+        'stations': routeData.stations.map((station) => {
+          'id': station.id,
+          'name': station.name,
+          'latitude': station.latitude,
+          'longitude': station.longitude,
+          'sequenceOrder': station.sequenceOrder,
+          'isPassed': station.isPassed,
+          'passedAt': station.actualArrivalTime?.toIso8601String(),
+          'estimatedTime': station.estimatedArrivalTime ?? station.estimatedDepartureTime,
+        }).toList(),
+      };
+
+      await _firestore
+          .collection('active_routes')
+          .doc(_activeRouteCode)
+          .set(routeDoc, SetOptions(merge: true));
+
+      print('✅ Synced to Firebase: $_activeRouteCode');
+    } catch (e) {
+      print('❌ Firebase sync error: $e');
+    }
+  }
+
+  static int _getCurrentStationIndex() {
+    if (_activeRouteCode == null) return 0;
+    final routeData = _localRoutes[_activeRouteCode];
+    if (routeData == null) return 0;
+    
+    return routeData.stations.where((s) => s.isPassed).length;
+  }
+
+  static void _startFirebaseSync() {
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      _syncToFirebase();
+    });
+  }
+
+  static void _stopFirebaseSync() {
+    _syncTimer?.cancel();
+  }
+
+  // Predefined routes - Fixed route codes
   static final Map<String, RouteData> _predefinedRoutes = {
-    '123456': RouteData(
-      code: '123456',
+    'TG001': RouteData(
+      code: 'TG001',
       routeKey: 'keputih_pens_route',
       routeName: 'Keputih - PENS Testing Route',
       description: 'Route testing dari Keputih Tegal Timur menuju Kampus PENS',
@@ -91,8 +159,8 @@ class EnhancedRouteService {
       createdAt: DateTime.now(),
     ),
     
-    '789012': RouteData(
-      code: '789012',
+    'TG002': RouteData(
+      code: 'TG002',
       routeKey: 'jakarta_bandung',
       routeName: 'Jakarta - Bandung Express',
       description: 'Kereta cepat Jakarta menuju Bandung via Bekasi',
@@ -130,26 +198,8 @@ class EnhancedRouteService {
         ),
         StationData(
           id: '4',
-          name: 'Cikarang',
-          sequenceOrder: 4,
-          estimatedArrivalTime: '07:45',
-          estimatedDepartureTime: '07:50',
-          latitude: -6.261111,
-          longitude: 107.152778,
-        ),
-        StationData(
-          id: '5',
-          name: 'Purwakarta',
-          sequenceOrder: 5,
-          estimatedArrivalTime: '08:30',
-          estimatedDepartureTime: '08:35',
-          latitude: -6.556944,
-          longitude: 107.434167,
-        ),
-        StationData(
-          id: '6',
           name: 'Bandung',
-          sequenceOrder: 6,
+          sequenceOrder: 4,
           estimatedArrivalTime: '09:15',
           estimatedDepartureTime: null,
           latitude: -6.921389,
@@ -160,8 +210,8 @@ class EnhancedRouteService {
       createdAt: DateTime.now(),
     ),
     
-    '345678': RouteData(
-      code: '345678',
+    'TG003': RouteData(
+      code: 'TG003',
       routeKey: 'surabaya_malang',
       routeName: 'Surabaya - Malang Regional',
       description: 'Kereta regional Surabaya menuju Malang via Sidoarjo',
@@ -190,63 +240,12 @@ class EnhancedRouteService {
         ),
         StationData(
           id: '3',
-          name: 'Bangil',
-          sequenceOrder: 3,
-          estimatedArrivalTime: '08:15',
-          estimatedDepartureTime: '08:20',
-          latitude: -7.599167,
-          longitude: 112.818889,
-        ),
-        StationData(
-          id: '4',
           name: 'Malang',
-          sequenceOrder: 4,
+          sequenceOrder: 3,
           estimatedArrivalTime: '09:00',
           estimatedDepartureTime: null,
           latitude: -7.966667,
           longitude: 112.633333,
-        ),
-      ],
-      status: RouteStatus.pending,
-      createdAt: DateTime.now(),
-    ),
-    
-    '901234': RouteData(
-      code: '901234',
-      routeKey: 'yogyakarta_solo',
-      routeName: 'Yogyakarta - Solo Ekspres',
-      description: 'Kereta ekspres Yogyakarta menuju Solo',
-      conductorName: '',
-      conductorId: '',
-      departureDate: '',
-      departureTime: '08:00',
-      stations: [
-        StationData(
-          id: '1',
-          name: 'Yogyakarta Tugu',
-          sequenceOrder: 1,
-          estimatedArrivalTime: null,
-          estimatedDepartureTime: '08:00',
-          latitude: -7.789056,
-          longitude: 110.363611,
-        ),
-        StationData(
-          id: '2',
-          name: 'Klaten',
-          sequenceOrder: 2,
-          estimatedArrivalTime: '08:45',
-          estimatedDepartureTime: '08:50',
-          latitude: -7.705833,
-          longitude: 110.606111,
-        ),
-        StationData(
-          id: '3',
-          name: 'Solo Balapan',
-          sequenceOrder: 3,
-          estimatedArrivalTime: '09:30',
-          estimatedDepartureTime: null,
-          latitude: -7.556111,
-          longitude: 110.824167,
         ),
       ],
       status: RouteStatus.pending,
@@ -259,6 +258,7 @@ class EnhancedRouteService {
     _localRoutes.clear();
     _localRoutes.addAll(_predefinedRoutes);
     print('🚂 Initialized ${_localRoutes.length} predefined routes');
+    print('📋 Available routes: ${_localRoutes.keys.toList()}');
   }
 
   // Get all available route codes
@@ -269,8 +269,12 @@ class EnhancedRouteService {
 
   // Get route info by code
   static RouteInfo? getRouteInfo(String code) {
+    print('🔍 Getting route info for: $code');
+    _initializePredefinedRoutes();
+    
     if (_predefinedRoutes.containsKey(code)) {
       final route = _predefinedRoutes[code]!;
+      print('✅ Found route: ${route.routeName}');
       return RouteInfo(
         code: code,
         routeName: route.routeName,
@@ -279,6 +283,7 @@ class EnhancedRouteService {
         departureTime: route.departureTime,
       );
     }
+    print('❌ Route not found: $code');
     return null;
   }
 
@@ -289,7 +294,11 @@ class EnhancedRouteService {
     required String conductorId,
     required String departureDate,
   }) {
+    print('🚀 Activating route: $routeCode for $conductorName');
+    _initializePredefinedRoutes();
+    
     if (!_predefinedRoutes.containsKey(routeCode)) {
+      print('❌ Route code not found in predefined routes');
       return RouteCodeResult(
         success: false,
         message: 'Route code not found',
@@ -329,6 +338,8 @@ class EnhancedRouteService {
       print('🔍 Initializing GPS...');
       
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      print('📍 Location service enabled: $serviceEnabled');
+      
       if (!serviceEnabled) {
         print('❌ Location services disabled');
         return LocationResult(
@@ -386,6 +397,7 @@ class EnhancedRouteService {
       
       final gpsResult = await initializeGPS();
       if (!gpsResult.success) {
+        print('❌ GPS initialization failed: ${gpsResult.message}');
         return TrackingResult(
           success: false,
           message: gpsResult.message,
@@ -394,6 +406,8 @@ class EnhancedRouteService {
 
       _activeRouteCode = routeCode;
       _isTracking = true;
+      _startFirebaseSync();
+      await _syncToFirebase(); // Initial sync
       _stationDwellTimes.clear();
 
       const LocationSettings locationSettings = LocationSettings(
@@ -418,29 +432,7 @@ class EnhancedRouteService {
         },
       );
 
-      // Check if we're already near the first station
-      if (_localRoutes.containsKey(routeCode)) {
-        final routeData = _localRoutes[routeCode]!;
-        if (routeData.stations.isNotEmpty) {
-          final firstStation = routeData.stations.first;
-          if (firstStation.latitude != null && firstStation.longitude != null) {
-            final distance = Geolocator.distanceBetween(
-              gpsResult.position!.latitude,
-              gpsResult.position!.longitude,
-              firstStation.latitude!,
-              firstStation.longitude!,
-            );
-            
-            print('📏 Distance to first station ${firstStation.name}: ${distance.toInt()}m');
-            
-            if (distance < STATION_DETECTION_RADIUS) {
-              print('✅ Auto-marking first station as passed');
-              _markStationPassedAutomatically(firstStation.id);
-            }
-          }
-        }
-      }
-
+      print('✅ GPS tracking started successfully');
       return TrackingResult(
         success: true,
         message: 'Conductor tracking started successfully',
@@ -459,7 +451,6 @@ class EnhancedRouteService {
     if (_activeRouteCode == null) return;
 
     try {
-      await _sendLocationToServer(position);
       await _checkStationProximityAutomatic(position);
       
       _routeUpdateController.add(RouteUpdate(
@@ -469,14 +460,6 @@ class EnhancedRouteService {
       ));
     } catch (e) {
       print('❌ Error handling location update: $e');
-    }
-  }
-
-  static Future<void> _sendLocationToServer(Position position) async {
-    try {
-      print('📤 Would send location to server: ${position.latitude}, ${position.longitude}');
-    } catch (e) {
-      print('❌ Error sending location to server: $e');
     }
   }
 
@@ -502,7 +485,7 @@ class EnhancedRouteService {
       nextStation.longitude!,
     );
 
-    print('📏 Distance to ${nextStation.name}: ${distance.toInt()}m (threshold: ${STATION_DETECTION_RADIUS.toInt()}m)');
+    print('📏 Distance to ${nextStation.name}: ${distance.toInt()}m');
 
     if (distance <= STATION_DETECTION_RADIUS) {
       final now = DateTime.now();
@@ -517,27 +500,14 @@ class EnhancedRouteService {
           distance: distance,
           eventType: StationEventType.approaching,
         ));
-        
-        Fluttertoast.showToast(
-          msg: 'Approaching ${nextStation.name} (${distance.toInt()}m)',
-          toastLength: Toast.LENGTH_SHORT,
-          backgroundColor: Colors.blue,
-        );
       } else {
         final dwellStartTime = _stationDwellTimes[nextStation.id]!;
         final dwellDuration = now.difference(dwellStartTime).inSeconds;
-        
-        print('⏱️ Dwell time at ${nextStation.name}: ${dwellDuration}s (threshold: ${STATION_DWELL_TIME}s)');
         
         if (dwellDuration >= STATION_DWELL_TIME && !nextStation.isPassed) {
           print('✅ Auto-marking ${nextStation.name} as passed');
           await _markStationPassedAutomatically(nextStation.id);
         }
-      }
-    } else {
-      if (_stationDwellTimes.containsKey(nextStation.id)) {
-        print('🔄 Reset dwell timer for ${nextStation.name} (moved away)');
-        _stationDwellTimes.remove(nextStation.id);
       }
     }
   }
@@ -551,8 +521,6 @@ class EnhancedRouteService {
     }
 
     try {
-      print('🎯 Marking station $stationId as passed automatically');
-      
       final localResult = _markStationPassedLocally(stationId);
       
       if (localResult.success) {
@@ -561,16 +529,9 @@ class EnhancedRouteService {
           stationName: localResult.stationData!.name,
           eventType: StationEventType.arrived,
         ));
-        
-        Fluttertoast.showToast(
-          msg: '✅ Arrived at ${localResult.stationData!.name}',
-          toastLength: Toast.LENGTH_LONG,
-          backgroundColor: Colors.green,
-        );
-        
-        print('✅ Successfully marked ${localResult.stationData!.name} as passed');
       }
       
+      await _syncToFirebase();
       return localResult;
     } catch (e) {
       print('❌ Error marking station: $e');
@@ -614,23 +575,15 @@ class EnhancedRouteService {
     routeData.status = RouteStatus.active;
     routeData.lastUpdate = DateTime.now();
     
-    print('📊 Station ${station.name} marked as passed. Progress: ${stationIndex + 1}/${routeData.stations.length}');
-    
     if (stationIndex == routeData.stations.length - 1) {
       routeData.status = RouteStatus.completed;
       routeData.completedAt = DateTime.now();
-      
-      print('🏁 Route completed!');
       
       _stationDetectionController.add(StationDetectionEvent(
         stationId: stationId,
         stationName: station.name,
         eventType: StationEventType.routeCompleted,
       ));
-      
-      Future.delayed(Duration(seconds: 3), () {
-        stopTracking();
-      });
     }
     
     return StationUpdateResult(
@@ -640,28 +593,48 @@ class EnhancedRouteService {
     );
   }
 
-  static void stopTracking() {
+  static Future<void> stopTracking() async {
     print('🛑 Stopping GPS tracking');
+    _stopFirebaseSync();
+    
+    if (_activeRouteCode != null) {
+      try {
+        await _firestore
+            .collection('active_routes')
+            .doc(_activeRouteCode)
+            .update({
+          'status': 'stopped',
+          'stoppedAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        print('❌ Error updating stop status: $e');
+      }
+    }
+    
     _positionStream?.cancel();
     _positionStream = null;
     _isTracking = false;
     _activeRouteCode = null;
     _stationDwellTimes.clear();
-    
-    Fluttertoast.showToast(msg: 'GPS tracking stopped');
   }
 
   // Get route details
   static RouteDetailsResult getRouteDetails(String code) {
+    print('📋 Getting route details for: $code');
+    _initializePredefinedRoutes();
+    
     if (!_localRoutes.containsKey(code)) {
+      print('❌ Route details not found for: $code');
       return RouteDetailsResult(
         success: false,
         message: 'Route code not found',
       );
     }
     
+    print('✅ Route details found for: $code');
     return RouteDetailsResult(
       success: true,
+      message: 'Route details found',
       routeData: _localRoutes[code]!,
     );
   }
@@ -697,43 +670,6 @@ class EnhancedRouteService {
     );
   }
 
-  // Get markers for Google Maps
-  static Set<Marker> getRouteMarkers(String routeCode) {
-    final routeData = _localRoutes[routeCode];
-    if (routeData == null) return {};
-
-    return routeData.stations.map((station) {
-      return Marker(
-        markerId: MarkerId(station.id),
-        position: LatLng(station.latitude!, station.longitude!),
-        infoWindow: InfoWindow(
-          title: station.name,
-          snippet: station.isPassed ? 'Passed ✅' : 'Upcoming 📍',
-        ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          station.isPassed 
-            ? BitmapDescriptor.hueGreen 
-            : BitmapDescriptor.hueRed,
-        ),
-      );
-    }).toSet();
-  }
-
-  // Get conductor marker
-  static Marker? getConductorMarker() {
-    if (_currentPosition == null) return null;
-
-    return Marker(
-      markerId: MarkerId('conductor'),
-      position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-      infoWindow: InfoWindow(
-        title: '🚂 Conductor Location',
-        snippet: 'Last updated: ${DateTime.now().toString().substring(11, 19)}',
-      ),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-    );
-  }
-
   // Get polyline for route path
   static Polyline? getRoutePolyline(String routeCode) {
     final routeData = _localRoutes[routeCode];
@@ -764,7 +700,7 @@ class EnhancedRouteService {
   }
 }
 
-// Additional Data Models
+// Data Models
 class LocationResult {
   final bool success;
   final String message;
@@ -799,7 +735,6 @@ class RouteUpdate {
   });
 }
 
-// Route Info Model
 class RouteInfo {
   final String code;
   final String routeName;
@@ -813,5 +748,57 @@ class RouteInfo {
     required this.description,
     required this.stationCount,
     required this.departureTime,
+  });
+}
+
+class RouteCodeResult {
+  final bool success;
+  final String message;
+  final String? code;
+
+  RouteCodeResult({
+    required this.success,
+    required this.message,
+    this.code,
+  });
+}
+
+class RouteDetailsResult {
+  final bool success;
+  final String message;
+  final RouteData? routeData;
+
+  RouteDetailsResult({
+    required this.success,
+    required this.message,
+    this.routeData,
+  });
+}
+
+class StationUpdateResult {
+  final bool success;
+  final String message;
+  final StationData? stationData;
+
+  StationUpdateResult({
+    required this.success,
+    required this.message,
+    this.stationData,
+  });
+}
+
+class RouteProgress {
+  final int totalStations;
+  final int passedStations;
+  final StationData? currentStation;
+  final StationData? nextStation;
+  final bool isCompleted;
+
+  RouteProgress({
+    required this.totalStations,
+    required this.passedStations,
+    this.currentStation,
+    this.nextStation,
+    required this.isCompleted,
   });
 }

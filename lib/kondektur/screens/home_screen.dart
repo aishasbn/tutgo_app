@@ -11,6 +11,7 @@ class ConductorHomeScreen extends StatefulWidget {
 class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
   final AuthService _authService = AuthService();
   String _conductorName = 'Kondektur';
+  String _conductorId = '000000';
   
   @override
   void initState() {
@@ -24,6 +25,7 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
       if (userData != null && mounted) {
         setState(() {
           _conductorName = userData['name'] ?? 'Kondektur';
+          _conductorId = userData['id'] ?? userData['staffId'] ?? '000000';
         });
       }
     } catch (e) {
@@ -45,6 +47,23 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
     } catch (e) {
       print('Logout error: $e');
     }
+  }
+
+  void _navigateToEnterCode() {
+    print('🚂 Navigating to enter code screen');
+    print('👤 Conductor: $_conductorName ($_conductorId)');
+    
+    // Navigate with conductor info
+    Navigator.pushNamed(
+      context, 
+      '/conductor-enter-code',
+      arguments: {
+        'conductorName': _conductorName,
+        'conductorId': _conductorId,
+      },
+    ).then((result) {
+      print('🔙 Returned from enter code screen: $result');
+    });
   }
 
   @override
@@ -77,6 +96,13 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        'ID: $_conductorId',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
                         ),
                       ),
                     ],
@@ -115,11 +141,69 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                     ),
                     const SizedBox(height: 40),
                     
+                    // Status Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue.shade700,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Status Tracking',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Tidak ada rute aktif',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Mulai tracking untuk mengaktifkan GPS dan mengirim update real-time ke penumpang',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black45,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 30),
+                    
                     // GPS Tracking Card
                     GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/conductor-enter-code');
-                      },
+                      onTap: _navigateToEnterCode,
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
@@ -157,7 +241,7 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'GPS Tracking Mode',
+                                        'Mulai GPS Tracking',
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
@@ -183,7 +267,7 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                             ),
                             const SizedBox(height: 16),
                             const Text(
-                              'Mulai tracking rute kereta dengan deteksi stasiun otomatis menggunakan GPS',
+                              'Masukkan kode rute untuk memulai tracking GPS real-time dan memberikan update lokasi kepada penumpang',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white,
@@ -207,7 +291,7 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    'FULLY AUTOMATIC',
+                                    'REAL-TIME TRACKING',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
@@ -288,6 +372,45 @@ class _ConductorHomeScreenState extends State<ConductorHomeScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                    
+                    const Spacer(),
+                    
+                    // Quick Info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.tips_and_updates, color: Colors.green.shade700),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Tips',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                Text(
+                                  'Pastikan GPS aktif dan koneksi internet stabil untuk tracking yang optimal',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

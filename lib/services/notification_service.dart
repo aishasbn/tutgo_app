@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../kondektur/services/enhanced_route_service.dart';
 import '../kondektur/models/route_models.dart';
-import 'train_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

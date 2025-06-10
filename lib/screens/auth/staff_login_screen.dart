@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../main_navigation_screen.dart';
+import '../auth_wrapper.dart';
 
 class StaffLoginScreen extends StatefulWidget {
   const StaffLoginScreen({super.key});
@@ -43,16 +43,14 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
       );
 
       if (result != null) {
-        print('✅ Staff login successful, navigating to main screen');
+        print('✅ Staff login successful');
+        print('👤 User: ${result.email}');
         
-        // Add another small delay before navigation
-        await Future.delayed(const Duration(milliseconds: 300));
-        
-        Navigator.pushReplacement(
+        // Force refresh auth state by navigating to AuthWrapper
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => const MainNavigationScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          (route) => false,
         );
       } else {
         _showErrorDialog('Login gagal. Periksa ID dan password Anda.');
@@ -122,6 +120,44 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 
                 const SizedBox(height: 40),
+                
+                // Debug info
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            'Staff Login Mode',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Setelah login, Anda akan diarahkan ke Conductor Dashboard',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
                 
                 // Account type selection (read-only display)
                 Row(
@@ -219,7 +255,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 
                 const SizedBox(height: 8),
-                                const Text(
+                const Text(
                   'Please sign in to be continue',
                   style: TextStyle(
                     fontSize: 16,
@@ -342,13 +378,52 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
-                            'Login',
+                            'Login as Staff',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Test credentials info
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.key, color: Colors.orange, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            'Test Credentials',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'ID: 250510\nPassword: 123456',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade700,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
